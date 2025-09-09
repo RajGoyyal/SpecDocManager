@@ -1,0 +1,219 @@
+# Angular Frontend Replication Prompt
+
+## Target Website Analysis
+**URL:** http://localhost:8080/#frs
+**Analysis Date:** 9/9/2025
+
+## Project Configuration
+- **Angular Version:** 17
+- **UI Library:** Angular Material
+- **Include Tests:** Yes
+- **Mock API:** Yes
+- **Accessibility:** Yes
+- **Responsive Design:** Yes
+
+
+
+
+## Discovered UI Elements
+
+### Navigation - header-nav
+- **Selector:** `header nav`
+- **Attributes:** role=navigation, aria-label=main navigation
+- **Validations:** Required navigation items: Home, About, Services, Contact
+- **Interactions:** Hover effects, mobile toggle, dropdown menus
+
+
+### Hero Banner - hero-section
+- **Selector:** `.hero-section`
+- **Attributes:** class=hero-section, data-testid=hero
+- **Validations:** Heading max 60 chars, CTA button required
+- **Interactions:** Parallax scroll, CTA click tracking
+
+
+### Form - contact-form
+- **Selector:** `#contact-form`
+- **Attributes:** method=POST, novalidate
+- **Validations:** Email format, required fields, max length validations
+- **Interactions:** Real-time validation, submission handling, success/error states
+
+
+### Card Grid - product-cards
+- **Selector:** `.product-grid .card`
+- **Attributes:** class=product-card, role=article
+- **Validations:** Image alt text required, price format validation
+- **Interactions:** Hover animations, click to detail view, wishlist toggle
+
+
+## Design Tokens
+
+### Colors
+- **primary:** #3B82F6 - Buttons, links, active states
+
+
+### Colors
+- **secondary:** #64748B - Subtle text, borders
+
+
+### Colors
+- **background:** #FFFFFF - Main background
+
+
+### Typography
+- **font-family-primary:** Inter, sans-serif - Body text
+
+
+### Typography
+- **font-family-heading:** Poppins, sans-serif - Headings
+
+
+### Spacing
+- **space-xs:** 0.5rem - Small gaps
+
+
+### Spacing
+- **space-md:** 1rem - Standard spacing
+
+
+### Spacing
+- **space-lg:** 2rem - Section spacing
+
+
+### Layout
+- **container-max-width:** 1200px - Content container
+
+
+### Layout
+- **breakpoint-mobile:** 768px - Mobile breakpoint
+
+
+## Angular Implementation Instructions
+
+### 1. Project Setup
+```bash
+ng new website-replica --routing --style=scss --strict
+cd website-replica
+ng add @angular/material
+npm install @angular/cdk @angular/flex-layout
+```
+
+### 2. Component Structure
+Generate the following components based on discovered elements:
+
+- `ng generate component components/headernav`
+
+- `ng generate component components/herosection`
+
+- `ng generate component components/contactform`
+
+- `ng generate component components/productcards`
+
+
+### 3. Routing Configuration
+Update `app-routing.module.ts` with discovered pages:
+```typescript
+const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'about', component: AboutComponent },
+  { path: 'services', component: ServicesComponent },
+  { path: 'contact', component: ContactComponent },
+  { path: '**', redirectTo: '' }
+];
+```
+
+### 4. Design System Implementation
+Create `src/styles/design-tokens.scss`:
+```scss
+// Colors
+$primary: #3B82F6;
+$secondary: #64748B;
+$background: #FFFFFF;
+
+// Typography
+$font-family-primary: Inter, sans-serif;
+$font-family-heading: Poppins, sans-serif;
+
+// Spacing
+$space-xs: 0.5rem;
+$space-md: 1rem;
+$space-lg: 2rem;
+
+// Layout
+$container-max-width: 1200px;
+$breakpoint-mobile: 768px;
+```
+
+### 5. Service Layer for Mock API
+```bash
+ng generate service services/api
+ng generate interface models/data-models
+```
+
+
+### 6. Mock API Implementation
+Create mock data services that simulate backend interactions:
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  // Implement mock API methods here
+  getProducts(): Observable<Product[]> {
+    // Return mock data
+  }
+  
+  submitContactForm(data: ContactForm): Observable<any> {
+    // Simulate form submission
+  }
+}
+```
+
+
+
+### 7. Accessibility Implementation
+- Add ARIA labels and roles to all interactive elements
+- Implement keyboard navigation
+- Ensure color contrast meets WCAG guidelines
+- Add screen reader support with proper semantic HTML
+
+
+
+### 8. Responsive Design
+- Implement mobile-first approach
+- Use CSS Grid and Flexbox for layouts
+- Add responsive breakpoints for tablet and desktop
+- Test on multiple device sizes
+
+
+
+### 9. Testing Setup
+```bash
+ng generate component components/component-name --skip-tests=false
+```
+
+Create unit tests for:
+- Component rendering
+- User interactions
+- Form validations
+- API service methods
+
+
+### 10. Integration with .NET Backend
+Document the following integration points:
+- API endpoint mappings
+- Authentication flow
+- Data models synchronization
+- Error handling strategies
+
+## Next Steps
+1. Follow the setup instructions above
+2. Implement each component based on the discovered UI elements
+3. Apply the extracted design tokens
+4. Test functionality and responsiveness
+5. Integrate with .NET backend APIs
+
+## Notes
+- This prompt was generated from automated website analysis
+- Verify all UI behaviors match the original website
+- Adjust design tokens based on actual implementation needs
+- Consider accessibility requirements for production use
