@@ -68,18 +68,26 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // Serve Angular browser build output
+  const angularBrowserDist = path.resolve(
+    import.meta.dirname,
+    "..",
+    "client-angular",
+    "dist",
+    "client-angular",
+    "browser",
+  );
 
-  if (!fs.existsSync(distPath)) {
+  if (!fs.existsSync(angularBrowserDist)) {
     throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      `Could not find Angular build at ${angularBrowserDist}. Build the Angular client first (cd client-angular; npm run build).`,
     );
   }
 
-  app.use(express.static(distPath));
+  app.use(express.static(angularBrowserDist));
 
-  // fall through to index.html if the file doesn't exist
+  // fall through to index.html for client routes
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(path.resolve(angularBrowserDist, "index.html"));
   });
 }

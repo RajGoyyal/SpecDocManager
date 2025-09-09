@@ -51,8 +51,12 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
+    // In development, you can run Angular dev server separately (npm run start in client-angular)
+    // and rely on Angular's proxy to hit the API on this server (port 5000).
+    // We keep Vite setup here only if you still want to run the old React dev flow.
     await setupVite(app, server);
   } else {
+    // In production serve the built Angular app
     serveStatic(app);
   }
 
@@ -63,8 +67,7 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "127.0.0.1",
   }, () => {
     log(`serving on port ${port}`);
   });
