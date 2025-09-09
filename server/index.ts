@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { serveStatic, log } from "./vite";
 
 const app = express();
 app.use(express.json());
@@ -39,6 +39,14 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // In development, redirect non-API routes to Angular dev server (port 4200)
+  if (app.get("env") === "development") {
+    app.get(/^\/(?!api).*/, (req, res) => {
+      const target = `http://localhost:4200${req.originalUrl}`;
+      res.redirect(302, target);
+    });
+  }
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -50,13 +58,9 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    // In development, you can run Angular dev server separately (npm run start in client-angular)
-    // and rely on Angular's proxy to hit the API on this server (port 5000).
-    // We keep Vite setup here only if you still want to run the old React dev flow.
-    await setupVite(app, server);
-  } else {
-    // In production serve the built Angular app
+  // In development: Angular dev server handles the client; API serves under /api
+  // In production: serve the built Angular app
+  if (app.get("env") !== "development") {
     serveStatic(app);
   }
 

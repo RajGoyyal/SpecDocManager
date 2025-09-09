@@ -1,42 +1,39 @@
-import { Component, inject, PLATFORM_ID } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterOutlet, RouterLink],
   template: `
-    <main style="padding:1rem;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-      <h1>SpecDocManager (Angular)</h1>
-      <p>Angular client is running. API is expected at <code>/api</code> (proxied in dev).</p>
-      <p><a href="/api/projects" target="_blank" rel="noopener">Open raw API: /api/projects</a></p>
-      <section *ngIf="projects; else loading">
-        <h2>Projects</h2>
-        <ul>
-          <li *ngFor="let p of projects">{{ p.title }} ({{ p.id }})</li>
-        </ul>
-      </section>
-      <ng-template #loading>
-        <p>Loading projects…</p>
-      </ng-template>
-    </main>
+    <div class="app-container">
+      <!-- Professional Application Header -->
+      <header class="app-header">
+        <div class="app-header-content">
+          <a href="#" class="app-logo">
+            <div class="app-logo-icon">S</div>
+            <span>SpecDoc Manager</span>
+          </a>
+          <nav class="flex items-center gap-6">
+            <a href="#" class="text-secondary font-medium">Documentation</a>
+            <a href="#" class="text-secondary font-medium">Support</a>
+            <div class="flex items-center gap-3">
+              <button class="btn btn-ghost btn-sm">Settings</button>
+              <button class="btn btn-primary btn-sm">Export</button>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      <!-- Main Application Layout -->
+      <div class="app-main">
+        <router-outlet />
+      </div>
+    </div>
   `,
   styles: [],
 })
 export class AppComponent {
-  title = 'client-angular';
-  projects: any[] | null = null;
-  private readonly http = inject(HttpClient);
-  private readonly platformId = inject(PLATFORM_ID);
-
-  constructor() {
-    // Avoid SSR fetch; only fetch in browser
-    if (isPlatformBrowser(this.platformId)) {
-      this.http.get<any[]>("/api/projects").subscribe({
-        next: (data) => (this.projects = data),
-        error: () => (this.projects = []),
-      });
-    }
-  }
+  title = 'SpecDoc Manager';
 }
