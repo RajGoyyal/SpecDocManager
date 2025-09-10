@@ -994,7 +994,7 @@ interface SuccessCriteria {
   `,
   styles: [`
     .app-layout {
-      display: block; /* Change from flex to block for proper positioning */
+      display: flex; /* Use flex for proper sidebar + content layout */
       height: 100vh;
       width: 100vw; /* Full viewport width */
       background: #ffffff; /* unify workspace background */
@@ -1002,17 +1002,15 @@ interface SuccessCriteria {
       overflow-x: hidden; /* Prevent horizontal scroll */
     }
 
-    /* Left Sidebar - Wider for Better Information Display */
+    /* Left Sidebar - Fixed Width */
     .sidebar {
-      width: 380px; /* Increased from 320px for more breathing room */
+      width: 380px; /* Fixed sidebar width */
       background: #fafbfc; /* Subtle background differentiation */
       border-right: 1px solid #e2e8f0; /* Subtle separator */
       display: flex;
       flex-direction: column;
-      position: fixed;
-      left: 0;
-      top: 64px;
-      height: calc(100vh - 64px);
+      flex-shrink: 0; /* Don't shrink the sidebar */
+      height: 100vh; /* Full height */
       overflow-y: auto;
       z-index: 10;
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04); /* Subtle depth */
@@ -1128,27 +1126,28 @@ interface SuccessCriteria {
       background: #f1f5f9;
     }
 
-    /* Main Content - Positioned Right After Sidebar */
+    /* Main Content - Starts Right After Sidebar */
     .main-content {
-      flex: 1;
-      margin-left: 380px; /* Exactly after the 380px sidebar */
+      flex: 1; /* Take remaining space */
+      margin-left: 0; /* No margin needed with flex layout */
       margin-right: 0;
-      margin-top: 64px;
-      /* Remove all height constraints for natural growth */
+      margin-top: 0; /* No top margin needed */
       display: flex;
       flex-direction: column;
       position: relative;
       background: #ffffff;
-      /* Force to start at sidebar edge */
-      width: calc(100vw - 380px); /* Available width after sidebar */
+      /* Take all available width after sidebar */
+      width: 100%;
       max-width: none;
       min-width: 0;
+      height: 100vh; /* Full height */
+      overflow-y: auto; /* Allow content scrolling */
     }
 
     .content-header {
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); /* Subtle gradient */
       border-bottom: 1px solid #e2e8f0; /* Subtle separator */
-      padding: 2rem 3rem 1.5rem 2rem; /* Reduced left padding to align with tab content */
+      padding: 2rem 3rem 1.5rem 2rem; /* Good padding for content */
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -1256,19 +1255,15 @@ interface SuccessCriteria {
       border-color: #d1d5db;
     }
 
-    /* Content Sections - Start Right After Sidebar */
+    /* Content Sections - Properly Aligned */
     .tab-content {
-      padding: 2rem 3rem 3rem 2rem; /* Reduced left padding to start closer to sidebar */
+      padding: 2rem 3rem 3rem 2rem; /* Consistent padding with header */
       margin: 0; /* No margin - start immediately */
-      /* Remove max-width constraint for full expansion */
       max-width: none;
       width: 100%;
-      /* Remove ALL height constraints */
       height: auto;
       min-height: auto;
-      /* Natural box sizing */
       box-sizing: border-box;
-      /* Ensure natural growth */
       overflow: visible;
       flex: 1;
       background: #ffffff;
