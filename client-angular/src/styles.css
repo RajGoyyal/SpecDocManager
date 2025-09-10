@@ -718,28 +718,39 @@ app-project-detail .container {
   margin: 0 !important;
 }
 
-/* Project Detail: Completely unconstrained full-width layout */
-app-project-detail .main-content,
-app-project-detail .tab-content,
+/* Project Detail: Content starts right after sidebar */
+app-project-detail .main-content {
+  margin-left: 380px !important; /* Exactly after sidebar */
+  width: calc(100vw - 380px) !important; /* Available width */
+  max-width: none !important;
+  padding: 0 !important;
+  /* Ensure it starts immediately after sidebar */
+  position: relative !important;
+  left: 0 !important;
+}
+
 app-project-detail .content-container {
   max-width: none !important;
   width: 100% !important;
   margin: 0 !important;
-  /* Remove all horizontal padding to go edge-to-edge */
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding: 0 !important;
   text-align: left !important;
-  /* Remove ALL height constraints for natural page flow */
   height: auto !important;
   min-height: unset !important;
   overflow: visible !important;
-  /* Ensure full expansion */
   flex: 1 !important;
 }
 
-/* Override main-content margin for wider sidebar */
-app-project-detail .main-content {
-  margin-left: 380px !important; /* Updated for wider sidebar */
+/* Tab content positioned right after sidebar */
+app-project-detail .tab-content {
+  text-align: left !important;
+  display: block !important;
+  max-width: none !important;
+  width: 100% !important;
+  /* Remove any margin that pushes content away from sidebar */
+  margin: 0 !important;
+  /* Minimal left padding to start close to sidebar edge */
+  padding-left: 2rem !important;
 }
 
 /* Remove overflow constraints from content-body */
@@ -790,11 +801,9 @@ app-project-detail .mx-auto {
   margin-right: auto !important;
 }
 
-/* Override any container centering */
-app-project-detail * {
-  text-align: inherit !important;
-}
-
+/* Ensure all content is left-aligned for optimal readability */
+app-project-detail .section,
+app-project-detail .section *,
 app-project-detail .content-title,
 app-project-detail .content-subtitle,
 app-project-detail .section-title,

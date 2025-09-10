@@ -994,9 +994,12 @@ interface SuccessCriteria {
   `,
   styles: [`
     .app-layout {
-      display: flex;
+      display: block; /* Change from flex to block for proper positioning */
       height: 100vh;
+      width: 100vw; /* Full viewport width */
       background: #ffffff; /* unify workspace background */
+      position: relative;
+      overflow-x: hidden; /* Prevent horizontal scroll */
     }
 
     /* Left Sidebar - Wider for Better Information Display */
@@ -1125,10 +1128,10 @@ interface SuccessCriteria {
       background: #f1f5f9;
     }
 
-    /* Main Content - Adjusted for Wider Sidebar */
+    /* Main Content - Positioned Right After Sidebar */
     .main-content {
       flex: 1;
-      margin-left: 380px; /* Updated to match new sidebar width */
+      margin-left: 380px; /* Exactly after the 380px sidebar */
       margin-right: 0;
       margin-top: 64px;
       /* Remove all height constraints for natural growth */
@@ -1136,21 +1139,21 @@ interface SuccessCriteria {
       flex-direction: column;
       position: relative;
       background: #ffffff;
-      /* Remove all width constraints */
-      min-width: 0;
+      /* Force to start at sidebar edge */
+      width: calc(100vw - 380px); /* Available width after sidebar */
       max-width: none;
-      width: 100%;
+      min-width: 0;
     }
 
     .content-header {
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); /* Subtle gradient */
       border-bottom: 1px solid #e2e8f0; /* Subtle separator */
-      padding: 2rem 3rem 1.5rem 3rem; /* Generous padding to match tab content */
+      padding: 2rem 3rem 1.5rem 2rem; /* Reduced left padding to align with tab content */
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: flex-start;
-      text-align: left;
+      align-items: flex-start; /* Left align the header content */
+      text-align: left; /* Left align the text in header */
       width: 100%;
       position: sticky;
       top: 0;
@@ -1165,8 +1168,8 @@ interface SuccessCriteria {
       font-size: 2.5rem; /* Larger for better hierarchy */
       font-weight: 800; /* Bolder */
       color: #0f172a;
-      text-align: left !important;
-      align-self: flex-start;
+      text-align: left !important; /* Left align the main title */
+      align-self: flex-start; /* Left align in flex container */
       background: linear-gradient(135deg, #1e293b, #3b82f6);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -1178,8 +1181,8 @@ interface SuccessCriteria {
       font-size: 1.125rem; /* Slightly larger */
       opacity: 0.8;
       color: #475569; /* Better contrast */
-      text-align: left !important;
-      align-self: flex-start;
+      text-align: left !important; /* Left align the subtitle */
+      align-self: flex-start; /* Left align in flex container */
       font-weight: 500;
     }
 
@@ -1253,11 +1256,11 @@ interface SuccessCriteria {
       border-color: #d1d5db;
     }
 
-    /* Content Sections - Enhanced Design with Better Spacing */
+    /* Content Sections - Start Right After Sidebar */
     .tab-content {
-      padding: 2rem 3rem 3rem 3rem; /* Increased padding for more spacious feel */
-      margin: 0;
-      /* Remove ALL width constraints */
+      padding: 2rem 3rem 3rem 2rem; /* Reduced left padding to start closer to sidebar */
+      margin: 0; /* No margin - start immediately */
+      /* Remove max-width constraint for full expansion */
       max-width: none;
       width: 100%;
       /* Remove ALL height constraints */
@@ -1272,19 +1275,24 @@ interface SuccessCriteria {
       /* Add subtle texture */
       background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.01) 1px, transparent 0);
       background-size: 20px 20px;
+      /* Left-aligned layout */
+      display: block; /* Remove flex centering */
+      text-align: left; /* Left align content */
     }
 
     .section {
       background: #ffffff; /* Clean white background */
       border-radius: 12px; /* Modern rounded corners */
       padding: 2rem; /* Generous padding */
-      margin: 0 0 2rem 0; /* Increased spacing between sections */
+      margin: 0 0 2rem 0; /* Spacing between sections */
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08); /* Subtle elevation */
       border: 1px solid #f1f5f9; /* Subtle border */
       transition: all 0.2s ease;
-      width: 100%;
+      width: 100%; /* Full width within centered container */
       max-width: none;
       box-sizing: border-box;
+      /* Ensure content within sections is left-aligned */
+      text-align: left;
     }
 
     .section:hover {
