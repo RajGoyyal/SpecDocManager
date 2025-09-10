@@ -698,29 +698,7 @@ interface SuccessCriteria {
             <div class="content-section">
               <div class="section-header">
                 <h2 class="section-title">Feature Management</h2>
-                <div class="header-actions">
-                  <button class="template-btn" (click)="showFeatureTemplates = !showFeatureTemplates">
-                    📋 Feature Templates
-                  </button>
-                  <button class="add-btn" (click)="addFeature()">+ Add Feature</button>
-                </div>
-              </div>
-              
-              <!-- Feature Templates Section -->
-              <div class="feature-templates" *ngIf="showFeatureTemplates">
-                <h3 class="templates-title">🚀 Quick Start Templates</h3>
-                <p class="templates-subtitle">Choose a template to quickly add common features</p>
-                <div class="templates-grid">
-                  <div class="template-card" *ngFor="let template of featureTemplates" (click)="addFeatureFromTemplate(template)">
-                    <div class="template-icon">{{ template.icon }}</div>
-                    <h4 class="template-title">{{ template.title }}</h4>
-                    <p class="template-desc">{{ template.description }}</p>
-                    <div class="template-tags">
-                      <span class="template-tag" [class]="'tag-' + template.importance">{{ template.importance }}</span>
-                      <span class="template-tag tag-type">{{ template.type }}</span>
-                    </div>
-                  </div>
-                </div>
+                <button class="add-btn" (click)="addFeature()">+ Add Feature</button>
               </div>
               
               <div class="feature-list">
@@ -757,8 +735,6 @@ interface SuccessCriteria {
                         <option value="performance">⚡ Performance - Speed & Efficiency</option>
                         <option value="usability">👤 Usability - User Experience</option>
                         <option value="compliance">📜 Compliance - Legal/Regulatory</option>
-                        <option value="data">🗃️ Data - Data Management</option>
-                        <option value="infrastructure">🏗️ Infrastructure - Technical Setup</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -770,32 +746,7 @@ interface SuccessCriteria {
                         <option value="in-progress">🚧 In Progress - Being Built</option>
                         <option value="testing">🧪 Testing - Quality Assurance</option>
                         <option value="completed">🎉 Completed - Done</option>
-                        <option value="on-hold">⏸️ On Hold - Paused</option>
                         <option value="rejected">❌ Rejected - Not Proceeding</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Feature Category 🏷️</label>
-                      <select class="form-control" [(ngModel)]="feature.category">
-                        <option value="core">🎯 Core Feature</option>
-                        <option value="user-interface">🖥️ User Interface</option>
-                        <option value="api">🔌 API/Integration</option>
-                        <option value="reporting">📊 Reporting</option>
-                        <option value="admin">⚙️ Administration</option>
-                        <option value="mobile">📱 Mobile</option>
-                        <option value="automation">🤖 Automation</option>
-                        <option value="analytics">📈 Analytics</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Estimated Effort 🕒</label>
-                      <select class="form-control" [(ngModel)]="feature.effort">
-                        <option value="xs">XS - 1-2 days</option>
-                        <option value="s">S - 3-5 days</option>
-                        <option value="m">M - 1-2 weeks</option>
-                        <option value="l">L - 3-4 weeks</option>
-                        <option value="xl">XL - 1-2 months</option>
-                        <option value="xxl">XXL - 3+ months</option>
                       </select>
                     </div>
                     <div class="form-group span-full">
@@ -836,34 +787,13 @@ interface SuccessCriteria {
                                 [(ngModel)]="feature.dependencies" 
                                 placeholder="List any dependencies on other features, systems, or external requirements"></textarea>
                     </div>
-                    <div class="form-group span-full">
-                      <label class="form-label">Testing Notes 🧪</label>
-                      <textarea class="form-control" rows="3" 
-                                [(ngModel)]="feature.testingNotes" 
-                                placeholder="Specific testing requirements, edge cases to consider, and quality assurance notes"></textarea>
-                    </div>
                     
-                    <!-- Enhanced Action Buttons -->
-                    <div class="feature-actions span-full">
-                      <div class="action-buttons">
-                        <button type="button" class="action-btn primary" (click)="addRequirementToFeature(i)">
-                          ➕ Add This Requirement
-                        </button>
-                        <button type="button" class="action-btn secondary" (click)="duplicateFeature(i)">
-                          📋 Duplicate Feature
-                        </button>
-                        <button type="button" class="action-btn info" (click)="exportFeature(i)">
-                          📤 Export Feature
-                        </button>
-                        <button type="button" class="action-btn success" (click)="markAsApproved(i)">
-                          ✅ Mark Approved
-                        </button>
-                      </div>
-                      <div class="feature-metadata">
-                        <small class="metadata-item">Created: {{ feature.createdDate || 'Not set' }}</small>
-                        <small class="metadata-item">Last Modified: {{ feature.lastModified || 'Not set' }}</small>
-                        <small class="metadata-item">Owner: {{ feature.owner || 'Unassigned' }}</small>
-                      </div>
+                    <!-- Simplified Action Button -->
+                    <div class="form-group span-full add-requirement-section">
+                      <button type="button" class="add-requirement-btn" (click)="addRequirementToFeature(i)">
+                        ➕ Add This Requirement
+                      </button>
+                      <p class="add-requirement-help">Click to save this feature as a formal requirement</p>
                     </div>
                   </div>
                 </div>
