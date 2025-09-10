@@ -78,17 +78,23 @@ interface Feature {
   id: string;
   title: string;
   importance: 'critical' | 'high' | 'medium' | 'low' | 'nice-to-have';
-  type: 'functional' | 'non-functional' | 'business' | 'integration' | 'security' | 'performance' | 'usability' | 'compliance';
+  type: 'functional' | 'non-functional' | 'business' | 'integration' | 'security' | 'performance' | 'usability' | 'compliance' | 'data' | 'infrastructure';
   description: string;
   detailedDescription: string;
   acceptanceCriteria: string[];
   businessRules: string[];
-  status: 'draft' | 'review' | 'approved' | 'in-progress' | 'testing' | 'completed' | 'rejected';
+  status: 'draft' | 'review' | 'approved' | 'in-progress' | 'testing' | 'completed' | 'on-hold' | 'rejected';
   priority: string;
-  category: string;
-  effortEstimate: string;
+  category: 'core' | 'user-interface' | 'api' | 'reporting' | 'admin' | 'mobile' | 'automation' | 'analytics';
+  effort: 'xs' | 's' | 'm' | 'l' | 'xl' | 'xxl';
   userStory: string;
   dependencies: string;
+  testingNotes: string;
+  createdDate: string;
+  lastModified: string;
+  owner: string;
+  // Legacy properties for backward compatibility
+  effortEstimate: string;
   targetRelease: string;
   technicalNotes: string;
   businessValue: string;
@@ -692,7 +698,29 @@ interface SuccessCriteria {
             <div class="content-section">
               <div class="section-header">
                 <h2 class="section-title">Feature Management</h2>
-                <button class="add-btn" (click)="addFeature()">+ Add Feature</button>
+                <div class="header-actions">
+                  <button class="template-btn" (click)="showFeatureTemplates = !showFeatureTemplates">
+                    📋 Feature Templates
+                  </button>
+                  <button class="add-btn" (click)="addFeature()">+ Add Feature</button>
+                </div>
+              </div>
+              
+              <!-- Feature Templates Section -->
+              <div class="feature-templates" *ngIf="showFeatureTemplates">
+                <h3 class="templates-title">🚀 Quick Start Templates</h3>
+                <p class="templates-subtitle">Choose a template to quickly add common features</p>
+                <div class="templates-grid">
+                  <div class="template-card" *ngFor="let template of featureTemplates" (click)="addFeatureFromTemplate(template)">
+                    <div class="template-icon">{{ template.icon }}</div>
+                    <h4 class="template-title">{{ template.title }}</h4>
+                    <p class="template-desc">{{ template.description }}</p>
+                    <div class="template-tags">
+                      <span class="template-tag" [class]="'tag-' + template.importance">{{ template.importance }}</span>
+                      <span class="template-tag tag-type">{{ template.type }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div class="feature-list">
@@ -703,79 +731,139 @@ interface SuccessCriteria {
                   </div>
                   <div class="form-grid">
                     <div class="form-group">
-                      <label class="form-label">What should it do?</label>
+                      <label class="form-label">What should it do? 🎯</label>
                       <input type="text" class="form-control" 
                              [(ngModel)]="feature.title" 
-                             placeholder="Feature title/name">
+                             placeholder="Brief title describing what this feature does">
                     </div>
                     <div class="form-group">
-                      <label class="form-label">How important is this?</label>
+                      <label class="form-label">How important is this? ⭐</label>
                       <select class="form-control" [(ngModel)]="feature.importance">
-                        <option value="critical">Critical</option>
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
-                        <option value="nice-to-have">Nice to Have</option>
+                        <option value="critical">🔴 Critical - Must Have</option>
+                        <option value="high">🟠 High - Very Important</option>
+                        <option value="medium">🟡 Medium - Important</option>
+                        <option value="low">🟢 Low - Nice to Have</option>
+                        <option value="nice-to-have">🔵 Nice to Have - Future</option>
                       </select>
                     </div>
                     <div class="form-group">
-                      <label class="form-label">What kind of requirement?</label>
+                      <label class="form-label">What kind of requirement? 📋</label>
                       <select class="form-control" [(ngModel)]="feature.type">
-                        <option value="functional">Functional</option>
-                        <option value="non-functional">Non-Functional</option>
-                        <option value="business">Business</option>
-                        <option value="integration">Integration</option>
-                        <option value="security">Security</option>
-                        <option value="performance">Performance</option>
-                        <option value="usability">Usability</option>
-                        <option value="compliance">Compliance</option>
+                        <option value="functional">⚙️ Functional - Core Feature</option>
+                        <option value="non-functional">📊 Non-Functional - Quality</option>
+                        <option value="business">💼 Business - Business Logic</option>
+                        <option value="integration">🔗 Integration - External Systems</option>
+                        <option value="security">🔒 Security - Safety & Privacy</option>
+                        <option value="performance">⚡ Performance - Speed & Efficiency</option>
+                        <option value="usability">👤 Usability - User Experience</option>
+                        <option value="compliance">📜 Compliance - Legal/Regulatory</option>
+                        <option value="data">🗃️ Data - Data Management</option>
+                        <option value="infrastructure">🏗️ Infrastructure - Technical Setup</option>
                       </select>
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Status</label>
+                      <label class="form-label">Current Status 📈</label>
                       <select class="form-control" [(ngModel)]="feature.status">
-                        <option value="draft">Draft</option>
-                        <option value="review">Review</option>
-                        <option value="approved">Approved</option>
-                        <option value="in-progress">In Progress</option>
-                        <option value="testing">Testing</option>
-                        <option value="completed">Completed</option>
-                        <option value="rejected">Rejected</option>
+                        <option value="draft">📝 Draft - Initial Idea</option>
+                        <option value="review">👀 Review - Under Review</option>
+                        <option value="approved">✅ Approved - Ready to Start</option>
+                        <option value="in-progress">🚧 In Progress - Being Built</option>
+                        <option value="testing">🧪 Testing - Quality Assurance</option>
+                        <option value="completed">🎉 Completed - Done</option>
+                        <option value="on-hold">⏸️ On Hold - Paused</option>
+                        <option value="rejected">❌ Rejected - Not Proceeding</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Feature Category 🏷️</label>
+                      <select class="form-control" [(ngModel)]="feature.category">
+                        <option value="core">🎯 Core Feature</option>
+                        <option value="user-interface">🖥️ User Interface</option>
+                        <option value="api">🔌 API/Integration</option>
+                        <option value="reporting">📊 Reporting</option>
+                        <option value="admin">⚙️ Administration</option>
+                        <option value="mobile">📱 Mobile</option>
+                        <option value="automation">🤖 Automation</option>
+                        <option value="analytics">📈 Analytics</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Estimated Effort 🕒</label>
+                      <select class="form-control" [(ngModel)]="feature.effort">
+                        <option value="xs">XS - 1-2 days</option>
+                        <option value="s">S - 3-5 days</option>
+                        <option value="m">M - 1-2 weeks</option>
+                        <option value="l">L - 3-4 weeks</option>
+                        <option value="xl">XL - 1-2 months</option>
+                        <option value="xxl">XXL - 3+ months</option>
                       </select>
                     </div>
                     <div class="form-group span-full">
-                      <label class="form-label">Tell us more about it</label>
+                      <label class="form-label">Tell us more about it 📝</label>
                       <textarea class="form-control" rows="3" 
                                 [(ngModel)]="feature.description" 
-                                placeholder="Brief description of the feature"></textarea>
+                                placeholder="Provide a clear description of what this feature does and why it's needed. Include user benefits and business value."></textarea>
                     </div>
                     <div class="form-group span-full">
-                      <label class="form-label">Detailed Description</label>
+                      <label class="form-label">User Story 👤</label>
+                      <textarea class="form-control" rows="2" 
+                                [(ngModel)]="feature.userStory" 
+                                placeholder="As a [user type], I want [functionality] so that [benefit/goal]"></textarea>
+                    </div>
+                    <div class="form-group span-full">
+                      <label class="form-label">Detailed Requirements 📋</label>
                       <textarea class="form-control" rows="4" 
                                 [(ngModel)]="feature.detailedDescription" 
-                                placeholder="Detailed explanation of the feature, including user stories and use cases"></textarea>
+                                placeholder="Detailed technical and functional requirements. Include specific behaviors, constraints, and technical details."></textarea>
                     </div>
                     <div class="form-group span-full">
-                      <label class="form-label">Acceptance Criteria</label>
+                      <label class="form-label">Acceptance Criteria ✅</label>
                       <textarea class="form-control" rows="4" 
                                 [value]="feature.acceptanceCriteria.join('\n')"
                                 (input)="updateAcceptanceCriteria(i, $event)"
-                                placeholder="Enter acceptance criteria (one per line)&#10;- Given condition, when action, then result&#10;- Feature works correctly when..."></textarea>
+                                placeholder="Enter acceptance criteria (one per line):&#10;- Given [context], when [action], then [result]&#10;- Feature should allow users to...&#10;- System must validate...&#10;- Error handling should..."></textarea>
                     </div>
                     <div class="form-group span-full">
-                      <label class="form-label">Business Rules</label>
+                      <label class="form-label">Business Rules & Constraints 💼</label>
                       <textarea class="form-control" rows="3" 
                                 [value]="feature.businessRules.join('\n')"
                                 (input)="updateBusinessRules(i, $event)"
-                                placeholder="Enter business rules (one per line)&#10;- Business constraint or rule&#10;- Data validation rule..."></textarea>
+                                placeholder="Enter business rules and constraints (one per line):&#10;- Only administrators can...&#10;- Data must be validated for...&#10;- Maximum file size is...&#10;- Users cannot..."></textarea>
+                    </div>
+                    <div class="form-group span-full">
+                      <label class="form-label">Dependencies & Prerequisites 🔗</label>
+                      <textarea class="form-control" rows="2" 
+                                [(ngModel)]="feature.dependencies" 
+                                placeholder="List any dependencies on other features, systems, or external requirements"></textarea>
+                    </div>
+                    <div class="form-group span-full">
+                      <label class="form-label">Testing Notes 🧪</label>
+                      <textarea class="form-control" rows="3" 
+                                [(ngModel)]="feature.testingNotes" 
+                                placeholder="Specific testing requirements, edge cases to consider, and quality assurance notes"></textarea>
                     </div>
                     
-                    <!-- Add Requirement Button -->
-                    <div class="form-group span-full add-requirement-section">
-                      <button type="button" class="add-requirement-btn" (click)="addRequirementToFeature(i)">
-                        ➕ Add This Requirement
-                      </button>
-                      <p class="add-requirement-help">Click to save this feature as a formal requirement</p>
+                    <!-- Enhanced Action Buttons -->
+                    <div class="feature-actions span-full">
+                      <div class="action-buttons">
+                        <button type="button" class="action-btn primary" (click)="addRequirementToFeature(i)">
+                          ➕ Add This Requirement
+                        </button>
+                        <button type="button" class="action-btn secondary" (click)="duplicateFeature(i)">
+                          📋 Duplicate Feature
+                        </button>
+                        <button type="button" class="action-btn info" (click)="exportFeature(i)">
+                          📤 Export Feature
+                        </button>
+                        <button type="button" class="action-btn success" (click)="markAsApproved(i)">
+                          ✅ Mark Approved
+                        </button>
+                      </div>
+                      <div class="feature-metadata">
+                        <small class="metadata-item">Created: {{ feature.createdDate || 'Not set' }}</small>
+                        <small class="metadata-item">Last Modified: {{ feature.lastModified || 'Not set' }}</small>
+                        <small class="metadata-item">Owner: {{ feature.owner || 'Unassigned' }}</small>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2090,6 +2178,266 @@ interface SuccessCriteria {
       .stat-row .stat-value.testing { color: #7c3aed; }
       .stat-row .stat-value.draft { color: #64748b; }
 
+      /* Enhanced Features Tab Action Buttons */
+      .feature-actions {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 16px;
+      }
+
+      .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .action-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .action-btn.primary {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .action-btn.primary:hover {
+        background: #2563eb;
+      }
+
+      .action-btn.secondary {
+        background: #6b7280;
+        color: white;
+      }
+
+      .action-btn.secondary:hover {
+        background: #4b5563;
+      }
+
+      .action-btn.info {
+        background: #06b6d4;
+        color: white;
+      }
+
+      .action-btn.info:hover {
+        background: #0891b2;
+      }
+
+      .action-btn.success {
+        background: #10b981;
+        color: white;
+      }
+
+      .action-btn.success:hover {
+        background: #059669;
+      }
+
+      .feature-metadata {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .metadata-item {
+        color: #64748b;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .metadata-item::before {
+        content: "•";
+        color: #cbd5e1;
+      }
+
+      /* Enhanced dropdown styling with emojis */
+      .form-control option {
+        padding: 8px;
+      }
+
+      /* Better spacing for enhanced form */
+      .form-group label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* Improved feature cards */
+      .feature-card {
+        border-left: 4px solid #e2e8f0;
+        transition: border-left-color 0.2s ease;
+      }
+
+      .feature-card:hover {
+        border-left-color: #3b82f6;
+      }
+
+      .feature-card[data-status="critical"] {
+        border-left-color: #dc2626;
+      }
+
+      .feature-card[data-status="high"] {
+        border-left-color: #ea580c;
+      }
+
+      .feature-card[data-status="approved"] {
+        border-left-color: #10b981;
+      }
+
+      .feature-card[data-status="completed"] {
+        border-left-color: #059669;
+      }
+
+      /* Feature Templates Styling */
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .template-btn {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .template-btn:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
+      }
+
+      .feature-templates {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .templates-title {
+        margin: 0 0 8px 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .templates-subtitle {
+        margin: 0 0 20px 0;
+        font-size: 14px;
+        color: #64748b;
+      }
+
+      .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .template-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .template-card:hover {
+        border-color: #3b82f6;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+      }
+
+      .template-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+      }
+
+      .template-title {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .template-desc {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        color: #64748b;
+        line-height: 1.4;
+      }
+
+      .template-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .template-tag {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .tag-critical {
+        background: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+      }
+
+      .tag-high {
+        background: #fff7ed;
+        color: #ea580c;
+        border: 1px solid #fed7aa;
+      }
+
+      .tag-medium {
+        background: #fffbeb;
+        color: #d97706;
+        border: 1px solid #fde68a;
+      }
+
+      .tag-low {
+        background: #f0fdf4;
+        color: #16a34a;
+        border: 1px solid #bbf7d0;
+      }
+
+      .tag-type {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+      }
+
       .export-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -2298,10 +2646,15 @@ export class ProjectDetailCleanComponent implements OnInit {
       businessRules: ['Passwords must be at least 8 characters', 'Email verification is required'],
       status: 'approved',
       priority: 'Critical',
-      category: 'Authentication',
-      effortEstimate: 'L',
+      category: 'core',
+      effort: 'l',
       userStory: 'As a user, I want to securely log into the system, so that I can access my personal data',
       dependencies: '',
+      testingNotes: 'Test with various browsers and devices',
+      createdDate: new Date().toISOString().split('T')[0],
+      lastModified: new Date().toISOString().split('T')[0],
+      owner: 'Product Team',
+      effortEstimate: 'L',
       targetRelease: 'MVP',
       technicalNotes: 'Use JWT tokens for session management',
       businessValue: 'Essential for user data security and access control'
@@ -2362,10 +2715,15 @@ export class ProjectDetailCleanComponent implements OnInit {
       businessRules: [],
       status: 'draft',
       priority: 'Medium',
-      category: '',
-      effortEstimate: '',
+      category: 'core',
+      effort: 'm',
       userStory: '',
       dependencies: '',
+      testingNotes: '',
+      createdDate: new Date().toISOString().split('T')[0],
+      lastModified: new Date().toISOString().split('T')[0],
+      owner: 'Unassigned',
+      effortEstimate: '',
       targetRelease: '',
       technicalNotes: '',
       businessValue: ''
@@ -2398,15 +2756,107 @@ export class ProjectDetailCleanComponent implements OnInit {
   addRequirementToFeature(index: number) {
     const feature = this.features()[index];
     if (feature?.title) {
-      // Here you could add logic to save the requirement to a formal requirements list
-      alert(`Requirement "${feature.title}" has been added to the formal requirements list.`);
-      // You could also update the feature status to indicate it's been formalized
+      // Update the feature with current timestamp
       this.features.update(current => {
         const updated = [...current];
-        updated[index] = { ...updated[index], status: 'approved' };
+        updated[index] = { 
+          ...updated[index], 
+          status: 'approved',
+          lastModified: new Date().toISOString().split('T')[0]
+        };
         return updated;
       });
+      
+      alert(`✅ Requirement "${feature.title}" has been added to the formal requirements list and marked as approved.`);
     }
+  }
+
+  // Enhanced Features Tab Methods
+  duplicateFeature(index: number) {
+    const feature = this.features()[index];
+    const duplicatedFeature: Feature = {
+      ...feature,
+      id: this.generateId(),
+      title: feature.title + ' (Copy)',
+      status: 'draft',
+      createdDate: new Date().toISOString().split('T')[0],
+      lastModified: new Date().toISOString().split('T')[0]
+    };
+    
+    this.features.update(current => [...current, duplicatedFeature]);
+    alert(`📋 Feature "${feature.title}" has been duplicated successfully.`);
+  }
+
+  exportFeature(index: number) {
+    const feature = this.features()[index];
+    const exportData = {
+      feature: feature,
+      exportDate: new Date().toISOString(),
+      exportedBy: 'Current User'
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `feature-${feature.title.replace(/\s+/g, '-').toLowerCase()}.json`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+    alert(`📤 Feature "${feature.title}" has been exported successfully.`);
+  }
+
+  markAsApproved(index: number) {
+    const feature = this.features()[index];
+    this.features.update(current => {
+      const updated = [...current];
+      updated[index] = { 
+        ...updated[index], 
+        status: 'approved',
+        lastModified: new Date().toISOString().split('T')[0]
+      };
+      return updated;
+    });
+    alert(`✅ Feature "${feature.title}" has been marked as approved.`);
+  }
+
+  // Utility method to generate unique IDs
+  generateId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+  }
+
+  // Feature Template Methods
+  addFeatureFromTemplate(template: any) {
+    const newFeature: Feature = {
+      id: this.generateId(),
+      title: template.title,
+      importance: template.importance,
+      type: template.type,
+      description: template.description,
+      detailedDescription: `${template.description}\n\nUser Story: ${template.userStory}`,
+      acceptanceCriteria: template.acceptanceCriteria,
+      businessRules: template.businessRules,
+      status: 'draft',
+      priority: template.importance.charAt(0).toUpperCase() + template.importance.slice(1),
+      category: template.category,
+      effort: template.effort,
+      userStory: template.userStory,
+      dependencies: '',
+      testingNotes: 'Standard testing protocols apply. Review with QA team.',
+      createdDate: new Date().toISOString().split('T')[0],
+      lastModified: new Date().toISOString().split('T')[0],
+      owner: 'Product Team',
+      effortEstimate: template.effort.toUpperCase(),
+      targetRelease: 'TBD',
+      technicalNotes: 'Implementation details to be defined',
+      businessValue: 'High business impact expected'
+    };
+    
+    this.features.update(current => [...current, newFeature]);
+    this.showFeatureTemplates = false;
+    alert(`🎉 "${template.title}" feature has been added from template!`);
   }
 
   // Download tab helper methods
@@ -2449,6 +2899,180 @@ export class ProjectDetailCleanComponent implements OnInit {
     includeAppendices: true,
     colorScheme: 'professional'
   });
+
+  // Feature Templates and UI State
+  showFeatureTemplates = false;
+  
+  featureTemplates = [
+    {
+      icon: '🔐',
+      title: 'User Authentication',
+      description: 'Login, registration, password management',
+      importance: 'critical',
+      type: 'functional',
+      category: 'core',
+      effort: 'l',
+      userStory: 'As a user, I want to securely access my account so that my data is protected',
+      acceptanceCriteria: [
+        'Users can register with email and password',
+        'Users can log in with valid credentials',
+        'Users can reset forgotten passwords',
+        'Failed login attempts are limited'
+      ],
+      businessRules: [
+        'Passwords must be at least 8 characters',
+        'Email verification is required',
+        'Account lockout after 5 failed attempts'
+      ]
+    },
+    {
+      icon: '🛒',
+      title: 'Shopping Cart',
+      description: 'Add, remove, and manage cart items',
+      importance: 'high',
+      type: 'functional',
+      category: 'core',
+      effort: 'm',
+      userStory: 'As a customer, I want to add items to my cart so that I can purchase multiple products',
+      acceptanceCriteria: [
+        'Users can add products to cart',
+        'Users can update quantities',
+        'Users can remove items',
+        'Cart persists across sessions'
+      ],
+      businessRules: [
+        'Maximum 99 units per product',
+        'Cart expires after 30 days',
+        'Price updates reflect immediately'
+      ]
+    },
+    {
+      icon: '💳',
+      title: 'Payment Processing',
+      description: 'Secure payment integration',
+      importance: 'critical',
+      type: 'functional',
+      category: 'core',
+      effort: 'l',
+      userStory: 'As a customer, I want to pay securely so that I can complete my purchase',
+      acceptanceCriteria: [
+        'Accept major credit cards',
+        'Process payments securely',
+        'Handle payment failures gracefully',
+        'Send payment confirmations'
+      ],
+      businessRules: [
+        'PCI DSS compliance required',
+        'Failed payments retry automatically',
+        'Refunds processed within 5-7 days'
+      ]
+    },
+    {
+      icon: '📊',
+      title: 'Admin Dashboard',
+      description: 'Management interface for administrators',
+      importance: 'high',
+      type: 'functional',
+      category: 'admin',
+      effort: 'xl',
+      userStory: 'As an admin, I want a dashboard to monitor and manage the system',
+      acceptanceCriteria: [
+        'View system analytics',
+        'Manage users and permissions',
+        'Monitor system health',
+        'Generate reports'
+      ],
+      businessRules: [
+        'Only admins can access',
+        'Audit trail for all actions',
+        'Data export capabilities'
+      ]
+    },
+    {
+      icon: '📱',
+      title: 'Mobile Responsive Design',
+      description: 'Optimized mobile user experience',
+      importance: 'high',
+      type: 'non-functional',
+      category: 'mobile',
+      effort: 'm',
+      userStory: 'As a mobile user, I want the app to work perfectly on my device',
+      acceptanceCriteria: [
+        'Responsive design for all screen sizes',
+        'Touch-friendly interface',
+        'Fast loading on mobile networks',
+        'Offline functionality where appropriate'
+      ],
+      businessRules: [
+        'Support iOS and Android',
+        'Minimum 3G network support',
+        'Accessibility compliance'
+      ]
+    },
+    {
+      icon: '🔍',
+      title: 'Search & Filtering',
+      description: 'Product search and filter functionality',
+      importance: 'medium',
+      type: 'functional',
+      category: 'user-interface',
+      effort: 'm',
+      userStory: 'As a user, I want to find products quickly using search and filters',
+      acceptanceCriteria: [
+        'Search by keyword',
+        'Filter by category, price, rating',
+        'Sort results by relevance',
+        'Auto-suggest search terms'
+      ],
+      businessRules: [
+        'Search results cached for performance',
+        'Typo tolerance in search',
+        'Maximum 1000 results per search'
+      ]
+    },
+    {
+      icon: '📈',
+      title: 'Analytics & Reporting',
+      description: 'Business intelligence and reporting',
+      importance: 'medium',
+      type: 'functional',
+      category: 'analytics',
+      effort: 'xl',
+      userStory: 'As a business owner, I want insights into user behavior and sales',
+      acceptanceCriteria: [
+        'Track user interactions',
+        'Generate sales reports',
+        'Monitor conversion rates',
+        'Export data in multiple formats'
+      ],
+      businessRules: [
+        'Data privacy compliance',
+        'Real-time dashboard updates',
+        'Historical data retention 2 years'
+      ]
+    },
+    {
+      icon: '🔔',
+      title: 'Notification System',
+      description: 'Email and push notifications',
+      importance: 'medium',
+      type: 'functional',
+      category: 'automation',
+      effort: 's',
+      userStory: 'As a user, I want to receive important updates about my orders',
+      acceptanceCriteria: [
+        'Send order confirmations',
+        'Notify about shipping updates',
+        'Marketing email preferences',
+        'Push notifications for mobile'
+      ],
+      businessRules: [
+        'Users can opt out anytime',
+        'Frequency limits on marketing emails',
+        'Critical notifications always sent'
+      ]
+    }
+  ];
 
   // Method to update export configuration
   updateExportConfig(key: string, value: any) {
