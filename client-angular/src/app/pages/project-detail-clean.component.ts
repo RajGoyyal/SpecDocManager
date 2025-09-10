@@ -722,6 +722,11 @@ interface SuccessCriteria {
     </div>
   `,
   styles: [`
+    /* CSS Reset for the component */
+    * {
+      box-sizing: border-box;
+    }
+    
     /* UNIFIED LAYOUT SYSTEM */
     .unified-layout {
       display: flex;
@@ -746,6 +751,7 @@ interface SuccessCriteria {
       flex-shrink: 0;
       overflow-y: auto;
       z-index: 100;
+      height: 100vh;
     }
 
     .sidebar-header {
@@ -904,15 +910,18 @@ interface SuccessCriteria {
       flex-direction: column;
       background: #ffffff;
       overflow: hidden;
+      height: 100vh;
     }
 
     /* UNIFIED TAB SYSTEM - HEADER + CONTENT COMBINED */
     .unified-tab {
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100%;
       width: 100%;
       background: #ffffff;
+      overflow: hidden;
+      position: relative;
     }
 
     /* TAB HEADER - INTEGRATED WITH EACH TAB */
@@ -921,6 +930,9 @@ interface SuccessCriteria {
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
       border-bottom: 1px solid #e2e8f0;
       flex-shrink: 0;
+      position: static;
+      z-index: 1;
+      width: 100%;
     }
 
     .main-title {
@@ -928,10 +940,7 @@ interface SuccessCriteria {
       font-size: 2rem;
       font-weight: 800;
       color: #1e293b;
-      background: linear-gradient(135deg, #1e293b, #3b82f6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      letter-spacing: -0.025em;
     }
 
     .main-subtitle {
@@ -939,22 +948,38 @@ interface SuccessCriteria {
       font-size: 1rem;
       color: #64748b;
       font-weight: 500;
+      line-height: 1.5;
     }
 
     /* TAB CONTENT - SCROLLABLE AREA */
     .tab-content {
       flex: 1;
       overflow-y: auto;
-      padding: 2rem;
-      background: #ffffff;
+      overflow-x: hidden;
+      padding: 0;
+      background: #f8fafc;
+      min-height: 0;
+      position: relative;
     }
 
     .content-section {
       background: #ffffff;
       border-radius: 8px;
       border: 1px solid #f1f5f9;
+      margin: 2rem;
+      margin-bottom: 1rem;
       padding: 2rem;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    .content-section:first-child {
+      margin-top: 2rem;
+    }
+
+    .content-section:last-child {
+      margin-bottom: 2rem;
     }
 
     .section-header {
