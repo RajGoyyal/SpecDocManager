@@ -668,3 +668,138 @@ textarea.form-control {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* ================================
+   PROJECT DETAIL: FULL-WIDTH TABS
+   ================================ */
+
+/* Remove all layout constraints for project detail pages */
+app-project-detail .app-layout {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* Remove any height constraints */
+  height: auto !important;
+  min-height: 100vh !important;
+  /* Remove overflow hidden that causes dual scrollbars */
+  overflow: visible !important;
+  /* Ensure natural expansion */
+  display: block !important;
+}
+
+/* Remove max-width constraint for project detail pages */
+app-project-detail app-layout .app-layout-main {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Remove max-width from app-main in project detail */
+app-project-detail .app-main {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+/* Remove max-width from app-header-content in project detail */
+app-project-detail .app-header-content {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+/* Ensure project detail container takes full width */
+app-project-detail .container {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Project Detail: Completely unconstrained full-width layout */
+app-project-detail .main-content,
+app-project-detail .tab-content,
+app-project-detail .content-container {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  /* Remove all horizontal padding to go edge-to-edge */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  text-align: left !important;
+  /* Remove ALL height constraints for natural page flow */
+  height: auto !important;
+  min-height: unset !important;
+  overflow: visible !important;
+  /* Ensure full expansion */
+  flex: 1 !important;
+}
+
+/* Remove overflow constraints from content-body */
+app-project-detail .content-body {
+  overflow: visible !important;
+  height: auto !important;
+  min-height: unset !important;
+  /* Full width expansion */
+  width: 100% !important;
+  max-width: none !important;
+  flex: 1 !important;
+}
+
+/* Tab content specific overrides - Edge to Edge */
+app-project-detail .tab-content > div,
+app-project-detail .content-section,
+app-project-detail .section-content {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+  /* Remove ALL constraints */
+  height: auto !important;
+  min-height: unset !important;
+  overflow: visible !important;
+}
+
+/* Ensure sections also expand fully */
+app-project-detail .section {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* Remove all layout constraints */
+  height: auto !important;
+  min-height: unset !important;
+  overflow: visible !important;
+}
+
+/* Remove any flex centering in project detail */
+app-project-detail .d-flex.justify-content-center {
+  justify-content: flex-start !important;
+}
+
+app-project-detail .mx-auto {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* Override any container centering */
+app-project-detail * {
+  text-align: inherit !important;
+}
+
+app-project-detail .content-title,
+app-project-detail .content-subtitle,
+app-project-detail .section-title,
+app-project-detail h1,
+app-project-detail h2,
+app-project-detail h3,
+app-project-detail h4,
+app-project-detail h5,
+app-project-detail h6 {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}

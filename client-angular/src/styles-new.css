@@ -180,8 +180,9 @@ p {
 }
 
 .app-header-content {
-  max-width: 1200px;
-  margin: 0 auto;
+  /* Use full width; avoid centralized header */
+  max-width: none;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -212,8 +213,9 @@ p {
 .app-main {
   flex: 1;
   display: flex;
-  max-width: 1200px;
-  margin: 0 auto;
+  /* Fill full width instead of centering at a max width */
+  max-width: none;
+  margin: 0;
   width: 100%;
   min-height: 0;
 }
@@ -229,7 +231,8 @@ p {
 
 .app-content {
   flex: 1;
-  padding: var(--space-6);
+  /* Remove horizontal padding so content can be flush with sidebar */
+  padding: var(--space-6) 0;
   overflow-y: auto;
   min-width: 0;
 }
@@ -337,6 +340,7 @@ p {
   transition: all 0.15s ease;
   text-decoration: none;
   white-space: nowrap;
+  -webkit-user-select: none; /* Safari */
   user-select: none;
 }
 
@@ -665,6 +669,159 @@ textarea.form-control {
   
   .tab-list {
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
+}
+
+/* ==============================
+   Project Detail: Full-width Tabs
+   Force tab content to align flush with the left sidebar and
+   expand fully to the right edge beneath the header.
+   Scoped to the component selector to avoid side effects.
+============================== */
+app-project-detail .app-layout,
+app-project-detail .main-content,
+app-project-detail .content-header,
+app-project-detail .content-body,
+app-project-detail .tab-content,
+app-project-detail .section {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+app-project-detail .content-header,
+app-project-detail .content-title,
+app-project-detail .content-subtitle,
+app-project-detail .section-title,
+app-project-detail .tab-content,
+app-project-detail .section {
+  padding-left: 0 !important;
+  text-align: left !important;
+  align-self: flex-start !important;
+}
+
+/* Ensure inner lists/grids span full width too */
+app-project-detail .form-grid,
+app-project-detail .data-fields-list,
+app-project-detail .feature-list,
+app-project-detail .export-grid,
+app-project-detail .summary-stats,
+app-project-detail .export-card {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Override any container centering */
+app-project-detail * {
+  text-align: inherit !important;
+}
+
+app-project-detail .content-title,
+app-project-detail .content-subtitle,
+app-project-detail .section-title,
+app-project-detail h1,
+app-project-detail h2,
+app-project-detail h3,
+app-project-detail h4,
+app-project-detail h5,
+app-project-detail h6 {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* ================================
+   PROJECT DETAIL: FULL-WIDTH TABS
+   ================================ */
+
+/* Remove all layout constraints for project detail pages */
+app-project-detail .app-layout {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove max-width constraint for project detail pages */
+app-project-detail app-layout .app-layout-main {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Remove max-width from app-main in project detail */
+app-project-detail .app-main {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+/* Remove max-width from app-header-content in project detail */
+app-project-detail .app-header-content {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+/* Ensure project detail container takes full width */
+app-project-detail .container {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Project Detail: Remove centering and apply full-width */
+app-project-detail .main-content,
+app-project-detail .tab-content,
+app-project-detail .content-container {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 1rem !important;
+  text-align: left !important;
+}
+
+/* Tab content specific overrides */
+app-project-detail .tab-content > div,
+app-project-detail .content-section,
+app-project-detail .section-content {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+/* Remove any flex centering in project detail */
+app-project-detail .d-flex.justify-content-center {
+  justify-content: flex-start !important;
+}
+
+app-project-detail .mx-auto {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* Override any container centering */
+app-project-detail * {
+  text-align: inherit !important;
+}
+
+app-project-detail .content-title,
+app-project-detail .content-subtitle,
+app-project-detail .section-title,
+app-project-detail h1,
+app-project-detail h2,
+app-project-detail h3,
+app-project-detail h4,
+app-project-detail h5,
+app-project-detail h6 {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
 }

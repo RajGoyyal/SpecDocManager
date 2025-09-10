@@ -8,18 +8,22 @@ interface Project {
   title: string;
   version: string;
   startDate: string;
+  endDate: string;
   author: string;
   description: string;
-  status: 'draft' | 'active' | 'review' | 'completed';
+  status: 'planning' | 'active' | 'testing' | 'review' | 'completed' | 'on-hold';
+  priority: 'critical' | 'high' | 'medium' | 'low';
 }
 
 interface Stakeholder {
   id: string;
   name: string;
   role: string;
-  type: 'primary' | 'secondary' | 'reviewer';
+  type: 'primary' | 'secondary' | 'reviewer' | 'user' | 'technical';
   email: string;
   phone: string;
+  department: string;
+  responsibilities: string;
 }
 
 interface WhatWeNeed {
@@ -111,6 +115,44 @@ interface SuccessCriteria {
           </button>
         </nav>
 
+        <!-- Project Summary Section -->
+        <div class="sidebar-section">
+          <h3 class="section-title">Project Summary</h3>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total Features</span>
+              <span class="stat-value">{{ features().length }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">High Priority</span>
+              <span class="stat-value">{{ getHighPriorityCount() }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Completion</span>
+              <span class="stat-value">{{ getCompletionPercentage() }}%</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="getCompletionPercentage()"></div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="sidebar-section">
+          <h3 class="section-title">Quick Actions</h3>
+          <div class="action-buttons">
+            <button class="action-btn" (click)="autoSave()">
+              💾 Auto Save
+            </button>
+            <button class="action-btn" (click)="validateProject()">
+              ✅ Validate
+            </button>
+            <button class="action-btn" (click)="exportProject('json')">
+              📤 Export
+            </button>
+          </div>
+        </div>
+
         <!-- User Info -->
         <div class="sidebar-footer">
           <div class="user-info">
@@ -131,27 +173,26 @@ interface SuccessCriteria {
       <main class="main-content">
         <div class="content-header">
           <h1 class="content-title">{{ project().title }}</h1>
-          <div class="content-actions">
-            <button class="btn btn-outline" (click)="autoSave()">Save</button>
-            <button class="btn btn-primary" (click)="exportProject('json')">Export</button>
-          </div>
+          <p class="content-subtitle">Professional Requirements Management System</p>
         </div>
 
         <div class="content-body">
           
           <!-- Basic Info Tab -->
           <div *ngIf="activeTab() === 'basic-info'" class="tab-content">
+            
+            <!-- Project Overview -->
             <div class="section">
-              <h3 class="section-title">Project Information</h3>
+              <h3 class="section-title">📋 Project Overview</h3>
               <div class="form-grid">
-                <div class="form-group">
+                <div class="form-group span-full">
                   <label for="title" class="form-label">Project Title</label>
                   <input 
                     id="title"
                     type="text" 
-                    class="form-control"
+                    class="form-control enhanced"
                     [(ngModel)]="project().title"
-                    placeholder="Enter project title">
+                    placeholder="Enter a descriptive project title">
                 </div>
                 <div class="form-group">
                   <label for="version" class="form-label">Version</label>
@@ -163,13 +204,24 @@ interface SuccessCriteria {
                     placeholder="1.0.0">
                 </div>
                 <div class="form-group">
-                  <label for="author" class="form-label">Author</label>
-                  <input 
-                    id="author"
-                    type="text" 
-                    class="form-control"
-                    [(ngModel)]="project().author"
-                    placeholder="Project author">
+                  <label for="status" class="form-label">Project Status</label>
+                  <select id="status" class="form-control" [(ngModel)]="project().status">
+                    <option value="planning">📝 Planning</option>
+                    <option value="active">🚀 Active Development</option>
+                    <option value="testing">🧪 Testing Phase</option>
+                    <option value="review">👀 Under Review</option>
+                    <option value="completed">✅ Completed</option>
+                    <option value="on-hold">⏸️ On Hold</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="priority" class="form-label">Project Priority</label>
+                  <select id="priority" class="form-control" [(ngModel)]="project().priority">
+                    <option value="critical">🔴 Critical</option>
+                    <option value="high">🟡 High Priority</option>
+                    <option value="medium">🟢 Medium Priority</option>
+                    <option value="low">🔵 Low Priority</option>
+                  </select>
                 </div>
                 <div class="form-group">
                   <label for="startDate" class="form-label">Start Date</label>
@@ -179,14 +231,151 @@ interface SuccessCriteria {
                     class="form-control"
                     [(ngModel)]="project().startDate">
                 </div>
-                <div class="form-group span-2">
-                  <label for="description" class="form-label">Description</label>
+                <div class="form-group">
+                  <label for="endDate" class="form-label">Target End Date</label>
+                  <input 
+                    id="endDate"
+                    type="date" 
+                    class="form-control"
+                    [(ngModel)]="project().endDate">
+                </div>
+                <div class="form-group span-full">
+                  <label for="description" class="form-label">Project Description</label>
                   <textarea 
                     id="description"
-                    class="form-control"
+                    class="form-control enhanced"
                     [(ngModel)]="project().description"
-                    placeholder="Project description"
+                    placeholder="Provide a comprehensive description of the project goals, scope, and expected outcomes"
                     rows="4"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Team & Stakeholders -->
+            <div class="section">
+              <div class="section-header">
+                <h3 class="section-title">👥 Team & Stakeholders</h3>
+                <button class="btn btn-primary" (click)="addStakeholder()">
+                  <span class="icon">+</span>
+                  Add Stakeholder
+                </button>
+              </div>
+              
+              <div class="stakeholder-grid">
+                <div *ngFor="let stakeholder of stakeholders(); let i = index" class="stakeholder-card">
+                  <div class="stakeholder-header">
+                    <div class="stakeholder-avatar">
+                      {{ stakeholder.name.charAt(0).toUpperCase() }}
+                    </div>
+                    <div class="stakeholder-info">
+                      <input 
+                        type="text" 
+                        class="form-control stakeholder-name"
+                        [(ngModel)]="stakeholder.name"
+                        placeholder="Full Name">
+                      <input 
+                        type="text" 
+                        class="form-control stakeholder-role"
+                        [(ngModel)]="stakeholder.role"
+                        placeholder="Role/Title">
+                    </div>
+                    <button 
+                      class="btn btn-danger btn-sm"
+                      (click)="removeStakeholder(i)">
+                      ×
+                    </button>
+                  </div>
+                  <div class="stakeholder-details">
+                    <div class="form-grid">
+                      <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input 
+                          type="email" 
+                          class="form-control"
+                          [(ngModel)]="stakeholder.email"
+                          placeholder="email@company.com">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input 
+                          type="tel" 
+                          class="form-control"
+                          [(ngModel)]="stakeholder.phone"
+                          placeholder="+1 (555) 123-4567">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <input 
+                          type="text" 
+                          class="form-control"
+                          [(ngModel)]="stakeholder.department"
+                          placeholder="Department/Division">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Stakeholder Type</label>
+                        <select class="form-control" [(ngModel)]="stakeholder.type">
+                          <option value="primary">Primary Decision Maker</option>
+                          <option value="secondary">Secondary Stakeholder</option>
+                          <option value="reviewer">Reviewer/Approver</option>
+                          <option value="user">End User</option>
+                          <option value="technical">Technical Lead</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Responsibilities</label>
+                      <textarea 
+                        class="form-control"
+                        [(ngModel)]="stakeholder.responsibilities"
+                        placeholder="Describe their role and responsibilities in this project"
+                        rows="2"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty state -->
+                <div *ngIf="stakeholders().length === 0" class="empty-state">
+                  <div class="empty-icon">👥</div>
+                  <h4>No Team Members Added</h4>
+                  <p>Add team members and stakeholders to track project responsibilities and communication.</p>
+                  <button class="btn btn-primary" (click)="addStakeholder()">
+                    Add First Team Member
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Project Metrics & KPIs -->
+            <div class="section">
+              <h3 class="section-title">📊 Project Metrics & KPIs</h3>
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-icon">📈</div>
+                  <div class="metric-content">
+                    <div class="metric-value">{{ getTotalRequirements() }}</div>
+                    <div class="metric-label">Total Requirements</div>
+                  </div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-icon">⚡</div>
+                  <div class="metric-content">
+                    <div class="metric-value">{{ getHighPriorityCount() }}</div>
+                    <div class="metric-label">High Priority Items</div>
+                  </div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-icon">✅</div>
+                  <div class="metric-content">
+                    <div class="metric-value">{{ getCompletionPercentage() }}%</div>
+                    <div class="metric-label">Project Completion</div>
+                  </div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-icon">👥</div>
+                  <div class="metric-content">
+                    <div class="metric-value">{{ stakeholders().length }}</div>
+                    <div class="metric-label">Team Members</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -801,59 +990,21 @@ interface SuccessCriteria {
 
         </div>
       </main>
-
-      <!-- Right Sidebar -->
-      <aside class="right-sidebar">
-        <div class="sidebar-section">
-          <h3 class="section-title">Project Summary</h3>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total Features</span>
-              <span class="stat-value">{{ features().length }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">High Priority</span>
-              <span class="stat-value">{{ getHighPriorityCount() }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Completion</span>
-              <span class="stat-value">{{ getCompletionPercentage() }}%</span>
-            </div>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" [style.width.%]="getCompletionPercentage()"></div>
-          </div>
-        </div>
-
-        <div class="sidebar-section">
-          <h3 class="section-title">Quick Actions</h3>
-          <div class="action-buttons">
-            <button class="action-btn" (click)="autoSave()">
-              💾 Auto Save
-            </button>
-            <button class="action-btn" (click)="validateProject()">
-              ✅ Validate
-            </button>
-            <button class="action-btn" (click)="exportProject('json')">
-              📤 Export
-            </button>
-          </div>
-        </div>
-      </aside>
     </div>
   `,
   styles: [`
     .app-layout {
       display: flex;
       height: 100vh;
-      background: #f8fafc;
+      background: #ffffff; /* unify workspace background */
     }
 
     /* Left Sidebar */
     .sidebar {
       width: 320px;
       background: white;
-      border-right: 1px solid #e2e8f0;
+      /* remove dividing border to blend with content */
+      border-right: none;
       display: flex;
       flex-direction: column;
       position: fixed;
@@ -865,8 +1016,8 @@ interface SuccessCriteria {
     }
 
     .sidebar-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 1.25rem 1.5rem; /* slightly tighter */
+      border-bottom: none; /* remove separation line */
     }
 
     .sidebar-title {
@@ -887,7 +1038,7 @@ interface SuccessCriteria {
 
     .sidebar-nav {
       flex: 1;
-      padding: 1rem 0;
+      padding: 0.5rem 0; /* tighter to blend with header */
     }
 
     .nav-item {
@@ -895,7 +1046,7 @@ interface SuccessCriteria {
       align-items: center;
       gap: 0.75rem;
       width: 100%;
-      padding: 0.75rem 1.5rem;
+      padding: 0.6rem 1.25rem; /* slightly tighter */
       border: none;
       background: none;
       color: #64748b;
@@ -977,65 +1128,67 @@ interface SuccessCriteria {
     /* Main Content */
     .main-content {
       flex: 1;
-      margin-left: 320px;
-      margin-right: 320px;
+      margin-left: 320px; /* keep margin for sidebar space */
+      margin-right: 0;
       margin-top: 64px;
-      height: calc(100vh - 64px);
+      /* Remove all height constraints for natural growth */
       display: flex;
       flex-direction: column;
-      overflow: hidden;
       position: relative;
+      background: #ffffff;
+      /* Remove all width constraints */
+      min-width: 0;
+      max-width: none;
+      width: 100%;
     }
 
     .content-header {
-      background: white;
-      border-bottom: 1px solid #e2e8f0;
-      padding: 1.5rem 2rem;
+      background: #ffffff;
+      border-bottom: none;
+      padding: 0.75rem 1.5rem 0.25rem 1.5rem; /* add horizontal padding to match tab content */
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      text-align: left;
+      width: 100%;
       position: sticky;
       top: 0;
       z-index: 50;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: none;
+      color: #0f172a;
       flex-shrink: 0;
     }
 
     .content-title {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #1e293b;
+      margin: 0 0 0.25rem 0; /* reduce bottom gap */
+      font-size: 2.25rem;
+      font-weight: bold;
+      color: #0f172a;
+  text-align: left !important;
+  align-self: flex-start;
     }
 
-    .content-actions {
-      display: flex;
-      gap: 0.75rem;
+    .content-subtitle {
+      margin: 0 0 0.25rem 0; /* sit closer to tab content */
+      font-size: 1.05rem;
+      opacity: 0.8;
+      color: #334155;
+  text-align: left !important;
+  align-self: flex-start;
     }
 
     .content-body {
       flex: 1;
-      padding: 2rem;
-      overflow-y: auto;
-      min-height: 0;
-    }
-
-    /* Right Sidebar */
-    .right-sidebar {
-      width: 320px;
-      background: white;
-      border-left: 1px solid #e2e8f0;
-      position: fixed;
-      right: 0;
-      top: 64px;
-      height: calc(100vh - 64px);
-      overflow-y: auto;
-      z-index: 10;
+      padding: 0;
+      /* Remove overflow-y: auto to prevent separate scroll area */
+      /* Remove min-height: 0 constraint */
+      background: #ffffff; /* unify with header/sidebar */
     }
 
     .sidebar-section {
-      padding: 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 1.25rem 1.5rem;
+      border-bottom: none; /* remove separators */
     }
 
     .summary-stats {
@@ -1095,59 +1248,116 @@ interface SuccessCriteria {
       border-color: #d1d5db;
     }
 
-    /* Content Sections */
+    /* Content Sections - Completely unconstrained */
+    .tab-content {
+      padding: 0 1.5rem 2rem 1.5rem; /* horizontal padding for readability */
+      margin: 0;
+      /* Remove ALL width constraints */
+      max-width: none;
+      width: 100%;
+      /* Remove ALL height constraints */
+      height: auto;
+      min-height: auto;
+      /* Natural box sizing */
+      box-sizing: border-box;
+      /* Ensure natural growth */
+      overflow: visible;
+      flex: 1;
+    }
+
     .section {
-      background: white;
-      border-radius: 0.5rem;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      background: transparent; /* blend into page */
+      border-radius: 0; /* no rounded blocks */
+      padding: 0; /* flush horizontally */
+      margin: 0 0 0.75rem 0; /* tighter vertical rhythm; no side margins */
+      box-shadow: none; /* remove card look */
+      border: none;
+      transition: all 0.2s ease;
+      width: 100%;
+      max-width: none;
+      box-sizing: border-box;
+    }
+
+    .section:hover {
+      box-shadow: none;
+      transform: none;
     }
 
     .section-title {
-      margin: 0 0 1rem 0;
-      font-size: 1.25rem;
-      font-weight: 600;
+      margin: 0 0 1.5rem 0;
+      font-size: 1.5rem;
+      font-weight: 700;
       color: #1e293b;
+      border-bottom: none; /* keep unified surface */
+      padding-bottom: 0.5rem;
+      display: block; /* ensure full-width, left-aligned */
+  text-align: left !important;
     }
 
     .section-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: none; /* remove separating rule */
     }
 
-    /* Forms */
+    /* Enhanced Forms */
     .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
+      gap: 1.25rem;
+      width: 100%;
+    }
+
+    /* Responsive breakpoints for forms */
+    @media (min-width: 1200px) {
+      .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      }
+    }
+
+    @media (min-width: 1600px) {
+      .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      }
     }
 
     .form-group {
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      width: 100%;
     }
 
     .form-group.span-2 {
       grid-column: span 2;
     }
 
+    .form-group.span-3 {
+      grid-column: span 3;
+    }
+
+    .form-group.span-full {
+      grid-column: 1 / -1;
+    }
+
     .form-label {
       display: block;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
       color: #374151;
-      font-weight: 500;
+      font-weight: 600;
       font-size: 0.875rem;
     }
 
     .form-control {
       width: 100%;
-      padding: 0.75rem;
+      max-width: 100%;
+      padding: 0.875rem;
       border: 1px solid #d1d5db;
       border-radius: 0.375rem;
       font-size: 0.875rem;
       transition: border-color 0.2s;
+      box-sizing: border-box;
     }
 
     .form-control:focus {
@@ -1266,13 +1476,14 @@ interface SuccessCriteria {
 
     /* Responsive Design */
     @media (max-width: 1200px) {
-      .sidebar, .right-sidebar {
+      .sidebar {
         display: none;
       }
       
       .main-content {
         margin-left: 0;
         margin-right: 0;
+  width: 100%;
       }
       
       .form-grid {
@@ -1289,7 +1500,8 @@ interface SuccessCriteria {
     .feature-list {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
+      width: 100%;
     }
 
     .data-field-card,
@@ -1299,6 +1511,8 @@ interface SuccessCriteria {
       border-radius: 0.5rem;
       padding: 1.5rem;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .field-header,
@@ -1496,6 +1710,165 @@ interface SuccessCriteria {
     .btn-success:hover {
       background: #047857;
     }
+
+    /* Enhanced Form Controls */
+    .form-control.enhanced {
+      padding: 1rem;
+      font-size: 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .form-control.enhanced:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Header Button Styles */
+    .btn-outline-white {
+      background: transparent;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-weight: 500;
+    }
+
+    .btn-outline-white:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.5);
+      color: white;
+    }
+
+    .btn-primary-white {
+      background: white;
+      color: #3b82f6;
+      border: 2px solid white;
+      font-weight: 600;
+    }
+
+    .btn-primary-white:hover {
+      background: #f8fafc;
+      color: #2563eb;
+    }
+
+    /* Stakeholder Cards */
+    .stakeholder-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    .stakeholder-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      transition: all 0.2s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .stakeholder-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
+
+    .stakeholder-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .stakeholder-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .stakeholder-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .stakeholder-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      padding: 0.25rem 0;
+    }
+
+    .stakeholder-role {
+      font-size: 0.875rem;
+      color: #64748b;
+      border: none;
+      background: transparent;
+      padding: 0.25rem 0;
+    }
+
+    .stakeholder-details {
+      display: grid;
+      gap: 1rem;
+    }
+
+    /* Metrics Dashboard */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    .metric-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .metric-icon {
+      font-size: 2.5rem;
+      opacity: 0.9;
+    }
+
+    .metric-content {
+      flex: 1;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
   `]
 })
 export class ProjectDetailComponent implements OnInit {
@@ -1510,9 +1883,11 @@ export class ProjectDetailComponent implements OnInit {
     title: 'E-Commerce Platform Requirements',
     version: '1.0.0',
     startDate: '2024-01-15',
+    endDate: '2024-07-15',
     author: 'John Smith',
-    description: 'Comprehensive requirements for a modern e-commerce platform with advanced features',
-    status: 'active'
+    description: 'Comprehensive requirements for a modern e-commerce platform with advanced features and seamless user experience',
+    status: 'active',
+    priority: 'high'
   });
 
   stakeholders = signal<Stakeholder[]>([
@@ -1522,7 +1897,9 @@ export class ProjectDetailComponent implements OnInit {
       role: 'Product Manager',
       type: 'primary',
       email: 'john.smith@company.com',
-      phone: '+1-555-0123'
+      phone: '+1-555-0123',
+      department: 'Product Development',
+      responsibilities: 'Overall project leadership, strategic decision making, stakeholder communication, and project roadmap management.'
     },
     {
       id: '2',
@@ -1530,7 +1907,9 @@ export class ProjectDetailComponent implements OnInit {
       role: 'UX Designer',
       type: 'secondary',
       email: 'sarah.wilson@company.com',
-      phone: '+1-555-0124'
+      phone: '+1-555-0124',
+      department: 'Design & User Experience',
+      responsibilities: 'User interface design, user experience research, wireframe creation, and usability testing coordination.'
     }
   ]);
 
@@ -1690,7 +2069,9 @@ export class ProjectDetailComponent implements OnInit {
       role: '',
       type: 'secondary',
       email: '',
-      phone: ''
+      phone: '',
+      department: '',
+      responsibilities: ''
     };
     this.stakeholders.set([...currentStakeholders, newStakeholder]);
   }
@@ -1775,7 +2156,7 @@ export class ProjectDetailComponent implements OnInit {
 
   getTotalRequirements(): number {
     return this.features().length + this.dataFields().length;
-  }
+   }
 
   getCurrentDate(): string {
     return new Date().toLocaleDateString();
