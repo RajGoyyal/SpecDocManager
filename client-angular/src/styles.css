@@ -737,6 +737,11 @@ app-project-detail .content-container {
   flex: 1 !important;
 }
 
+/* Override main-content margin for wider sidebar */
+app-project-detail .main-content {
+  margin-left: 380px !important; /* Updated for wider sidebar */
+}
+
 /* Remove overflow constraints from content-body */
 app-project-detail .content-body {
   overflow: visible !important;

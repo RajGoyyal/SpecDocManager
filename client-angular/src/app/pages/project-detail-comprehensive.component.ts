@@ -999,12 +999,11 @@ interface SuccessCriteria {
       background: #ffffff; /* unify workspace background */
     }
 
-    /* Left Sidebar */
+    /* Left Sidebar - Wider for Better Information Display */
     .sidebar {
-      width: 320px;
-      background: white;
-      /* remove dividing border to blend with content */
-      border-right: none;
+      width: 380px; /* Increased from 320px for more breathing room */
+      background: #fafbfc; /* Subtle background differentiation */
+      border-right: 1px solid #e2e8f0; /* Subtle separator */
       display: flex;
       flex-direction: column;
       position: fixed;
@@ -1013,6 +1012,7 @@ interface SuccessCriteria {
       height: calc(100vh - 64px);
       overflow-y: auto;
       z-index: 10;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04); /* Subtle depth */
     }
 
     .sidebar-header {
@@ -1125,10 +1125,10 @@ interface SuccessCriteria {
       background: #f1f5f9;
     }
 
-    /* Main Content */
+    /* Main Content - Adjusted for Wider Sidebar */
     .main-content {
       flex: 1;
-      margin-left: 320px; /* keep margin for sidebar space */
+      margin-left: 380px; /* Updated to match new sidebar width */
       margin-right: 0;
       margin-top: 64px;
       /* Remove all height constraints for natural growth */
@@ -1143,9 +1143,9 @@ interface SuccessCriteria {
     }
 
     .content-header {
-      background: #ffffff;
-      border-bottom: none;
-      padding: 0.75rem 1.5rem 0.25rem 1.5rem; /* add horizontal padding to match tab content */
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); /* Subtle gradient */
+      border-bottom: 1px solid #e2e8f0; /* Subtle separator */
+      padding: 2rem 3rem 1.5rem 3rem; /* Generous padding to match tab content */
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -1155,27 +1155,32 @@ interface SuccessCriteria {
       position: sticky;
       top: 0;
       z-index: 50;
-      box-shadow: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Subtle shadow */
       color: #0f172a;
       flex-shrink: 0;
     }
 
     .content-title {
-      margin: 0 0 0.25rem 0; /* reduce bottom gap */
-      font-size: 2.25rem;
-      font-weight: bold;
+      margin: 0 0 0.5rem 0;
+      font-size: 2.5rem; /* Larger for better hierarchy */
+      font-weight: 800; /* Bolder */
       color: #0f172a;
-  text-align: left !important;
-  align-self: flex-start;
+      text-align: left !important;
+      align-self: flex-start;
+      background: linear-gradient(135deg, #1e293b, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .content-subtitle {
-      margin: 0 0 0.25rem 0; /* sit closer to tab content */
-      font-size: 1.05rem;
+      margin: 0 0 1rem 0;
+      font-size: 1.125rem; /* Slightly larger */
       opacity: 0.8;
-      color: #334155;
-  text-align: left !important;
-  align-self: flex-start;
+      color: #475569; /* Better contrast */
+      text-align: left !important;
+      align-self: flex-start;
+      font-weight: 500;
     }
 
     .content-body {
@@ -1248,9 +1253,9 @@ interface SuccessCriteria {
       border-color: #d1d5db;
     }
 
-    /* Content Sections - Completely unconstrained */
+    /* Content Sections - Enhanced Design with Better Spacing */
     .tab-content {
-      padding: 0 1.5rem 2rem 1.5rem; /* horizontal padding for readability */
+      padding: 2rem 3rem 3rem 3rem; /* Increased padding for more spacious feel */
       margin: 0;
       /* Remove ALL width constraints */
       max-width: none;
@@ -1263,15 +1268,19 @@ interface SuccessCriteria {
       /* Ensure natural growth */
       overflow: visible;
       flex: 1;
+      background: #ffffff;
+      /* Add subtle texture */
+      background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.01) 1px, transparent 0);
+      background-size: 20px 20px;
     }
 
     .section {
-      background: transparent; /* blend into page */
-      border-radius: 0; /* no rounded blocks */
-      padding: 0; /* flush horizontally */
-      margin: 0 0 0.75rem 0; /* tighter vertical rhythm; no side margins */
-      box-shadow: none; /* remove card look */
-      border: none;
+      background: #ffffff; /* Clean white background */
+      border-radius: 12px; /* Modern rounded corners */
+      padding: 2rem; /* Generous padding */
+      margin: 0 0 2rem 0; /* Increased spacing between sections */
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08); /* Subtle elevation */
+      border: 1px solid #f1f5f9; /* Subtle border */
       transition: all 0.2s ease;
       width: 100%;
       max-width: none;
@@ -1279,19 +1288,32 @@ interface SuccessCriteria {
     }
 
     .section:hover {
-      box-shadow: none;
-      transform: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.1); /* Enhanced shadow on hover */
+      transform: translateY(-1px); /* Subtle lift effect */
+      border-color: #e2e8f0;
     }
 
     .section-title {
       margin: 0 0 1.5rem 0;
-      font-size: 1.5rem;
+      font-size: 1.75rem; /* Larger, more prominent */
       font-weight: 700;
-      color: #1e293b;
-      border-bottom: none; /* keep unified surface */
-      padding-bottom: 0.5rem;
-      display: block; /* ensure full-width, left-aligned */
-  text-align: left !important;
+      color: #0f172a;
+      border-bottom: 3px solid #3b82f6; /* Accent border */
+      padding-bottom: 0.75rem;
+      display: block;
+      text-align: left !important;
+      position: relative;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      border-radius: 2px;
     }
 
     .section-header {
@@ -1303,29 +1325,39 @@ interface SuccessCriteria {
       border-bottom: none; /* remove separating rule */
     }
 
-    /* Enhanced Forms */
+    /* Enhanced Forms with Better Spacing */
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Wider minimum columns */
+      gap: 2rem; /* Increased gap for better breathing room */
       width: 100%;
+      margin-top: 1rem;
     }
 
     /* Responsive breakpoints for forms */
     @media (min-width: 1200px) {
       .form-grid {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); /* Wider columns */
+        gap: 2.5rem;
       }
     }
 
     @media (min-width: 1600px) {
       .form-grid {
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); /* Even wider for large screens */
+        gap: 3rem;
+      }
+    }
+
+    @media (min-width: 2000px) {
+      .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); /* Ultra-wide support */
+        gap: 3.5rem;
       }
     }
 
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem; /* Increased spacing */
       width: 100%;
     }
 
@@ -1344,26 +1376,35 @@ interface SuccessCriteria {
     .form-label {
       display: block;
       margin-bottom: 0.75rem;
-      color: #374151;
+      color: #1f2937; /* Darker for better contrast */
       font-weight: 600;
-      font-size: 0.875rem;
+      font-size: 0.95rem; /* Slightly larger */
+      letter-spacing: 0.025em;
     }
 
     .form-control {
       width: 100%;
       max-width: 100%;
-      padding: 0.875rem;
-      border: 1px solid #d1d5db;
-      border-radius: 0.375rem;
-      font-size: 0.875rem;
-      transition: border-color 0.2s;
+      padding: 1rem 1.25rem; /* More generous padding */
+      border: 2px solid #e5e7eb; /* Thicker border */
+      border-radius: 8px; /* More rounded */
+      font-size: 0.95rem; /* Slightly larger text */
+      transition: all 0.2s ease;
       box-sizing: border-box;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
     }
 
     .form-control:focus {
       outline: none;
       border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px); /* Subtle lift */
+    }
+
+    .form-control:hover {
+      border-color: #d1d5db;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     /* Buttons */
