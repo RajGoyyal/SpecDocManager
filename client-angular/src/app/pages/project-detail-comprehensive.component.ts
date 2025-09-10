@@ -1,12 +1,7 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AutoSaveService } from '../services/auto-save.service';
-import { ProgressTrackingService, ProgressMetrics } from '../services/progress-tracking.service';
-import { DocumentExportService, ExportOptions } from '../services/document-export.service';
-import { KeyboardShortcutService, KeyboardShortcut } from '../services/keyboard-shortcut.service';
-import { AccessibilityService } from '../services/accessibility.service';
 
 interface Project {
   id: string;
@@ -24,6 +19,7 @@ interface Stakeholder {
   role: string;
   type: 'primary' | 'secondary' | 'reviewer';
   email: string;
+  phone: string;
 }
 
 interface WhatWeNeed {
@@ -40,8 +36,8 @@ interface DataField {
   id: string;
   fieldName: string;
   displayLabel: string;
-  uiControl: 'input' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file';
-  dataType: 'string' | 'number' | 'boolean' | 'date' | 'file';
+  uiControl: 'input' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'number' | 'email' | 'password';
+  dataType: 'string' | 'number' | 'boolean' | 'date' | 'file' | 'email';
   placeholder: string;
   defaultValue: string;
   maxLength: number;
@@ -53,18 +49,24 @@ interface DataField {
 interface Feature {
   id: string;
   title: string;
+  type: 'functional' | 'non-functional';
+  priority: 'high' | 'medium' | 'low';
   description: string;
-  importance: 'high' | 'medium' | 'low';
-  type: 'functional' | 'non-functional' | 'technical';
-  details: string;
+  userStory: string;
+  acceptanceCriteria: string[];
+  businessRules: string[];
+  testingNotes: string;
+  status: 'draft' | 'review' | 'approved' | 'implemented';
 }
 
 interface SuccessCriteria {
-  successMetrics: string[];
   userTestingPlan: string;
-  dataQualityRules: string[];
-  performanceRequirements: string[];
-  securityRequirements: string[];
+  dataQualityRules: string;
+  performanceRequirements: string;
+  securityRequirements: string;
+  accessibilityStandards: string[];
+  browserCompatibility: string[];
+  deviceCompatibility: string[];
 }
 
 @Component({
@@ -72,832 +74,466 @@ interface SuccessCriteria {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="project-container">
-      <!-- Left Sidebar Navigation -->
+    <div class="app-layout">
+      <!-- Left Sidebar -->
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h3>Project Sections</h3>
+          <h2 class="sidebar-title">
+            <span class="icon">📋</span>
+            FRS Manager
+          </h2>
+          <p class="sidebar-subtitle">Requirements Management System</p>
         </div>
+
+        <!-- Project Navigation -->
         <nav class="sidebar-nav">
           <button 
-            class="nav-item" 
-            [class.active]="activeTab() === 'basic-info'"
-            (click)="setActiveTab('basic-info')">
-            <span class="icon">📋</span>
-            Basic Info
-          </button>
-          <button 
-            class="nav-item" 
-            [class.active]="activeTab() === 'what-we-need'"
-            (click)="setActiveTab('what-we-need')">
-            <span class="icon">🎯</span>
-            What We Need
-          </button>
-          <button 
-            class="nav-item" 
-            [class.active]="activeTab() === 'data-fields'"
-            (click)="setActiveTab('data-fields')">
-            <span class="icon">📊</span>
-            Data Fields
-          </button>
-          <button 
-            class="nav-item" 
-            [class.active]="activeTab() === 'features'"
-            (click)="setActiveTab('features')">
-            <span class="icon">⚡</span>
-            Features
-          </button>
-          <button 
-            class="nav-item" 
-            [class.active]="activeTab() === 'success-criteria'"
-            (click)="setActiveTab('success-criteria')">
-            <span class="icon">✅</span>
-            Success Criteria
-          </button>
-          <button 
-            class="nav-item" 
-            [class.active]="activeTab() === 'download'"
-            (click)="setActiveTab('download')">
-            <span class="icon">⬇️</span>
-            Download
+            *ngFor="let tab of tabs" 
+            class="nav-item"
+            [class.active]="activeTab() === tab.id"
+            (click)="setActiveTab(tab.id)">
+            <span class="nav-icon">{{ tab.icon }}</span>
+            <span class="nav-label">{{ tab.label }}</span>
           </button>
         </nav>
+
+        <!-- User Info -->
+        <div class="sidebar-footer">
+          <div class="user-info">
+            <img 
+              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=40&h=40" 
+              alt="User avatar" 
+              class="user-avatar">
+            <div class="user-details">
+              <p class="user-name">John Smith</p>
+              <p class="user-role">Product Manager</p>
+            </div>
+            <button class="settings-btn">⚙️</button>
+          </div>
+        </div>
       </aside>
 
       <!-- Main Content -->
       <main class="main-content">
-        <!-- Project Header -->
-        <header class="project-header">
-          <div class="header-info">
-            <h1>{{project().title || 'New Project'}}</h1>
-            <div class="project-meta">
-              <span class="meta-item">Version: {{project().version || '1.0.0'}}</span>
-              <span class="meta-item">Status: 
-                <span class="status-badge" [class]="'status-' + (project().status || 'draft')">
-                  {{project().status || 'draft'}}
-                </span>
-              </span>
-              <span class="meta-item">Progress: {{calculateOverallProgress()}}%</span>
-            </div>
-          </div>
-          <div class="header-actions">
-            <div class="auto-save-status">
-              <span class="save-indicator" [class.saving]="isSaving()">
-                <span class="save-icon">💾</span>
-                <span class="save-text">
-                  {{isSaving() ? 'Saving...' : (hasUnsavedChanges() ? 'Unsaved changes' : 'All changes saved')}}
-                </span>
-              </span>
-              <div class="last-saved" *ngIf="lastSavedText()">
-                Last saved: {{lastSavedText()}}
-              </div>
-            </div>
-            <button class="btn btn-primary" (click)="saveProject()">
-              <span class="icon">💾</span>
-              Save Project
-            </button>
-            <button class="btn btn-secondary" (click)="goBack()">← Back</button>
-          </div>
-        </header>
-
-        <!-- Progress Overview -->
-        <div class="progress-overview">
-          <div class="overall-progress">
-            <div class="progress-circle">
-              <div class="circle-progress" [style.--progress]="calculateOverallProgress() + '%'">
-                <span class="progress-number">{{calculateOverallProgress()}}%</span>
-              </div>
-            </div>
-            <div class="progress-info">
-              <h3>Project Progress</h3>
-              <p class="progress-status">{{getProgressStatus()}}</p>
-              <p class="time-estimate">Estimated time to complete: {{getTimeEstimate()}}</p>
-            </div>
-          </div>
-          
-          <div class="section-progress-grid">
-            <div class="section-progress-item" *ngFor="let section of getSectionProgress()">
-              <div class="section-icon">{{section.icon}}</div>
-              <div class="section-details">
-                <h4>{{section.name}}</h4>
-                <div class="section-progress-bar">
-                  <div class="section-progress-fill" [style.width.%]="section.progress" [style.background-color]="section.color"></div>
-                </div>
-                <span class="section-percentage">{{section.progress}}%</span>
-              </div>
-            </div>
+        <div class="content-header">
+          <h1 class="content-title">{{ project().title }}</h1>
+          <div class="content-actions">
+            <button class="btn btn-outline" (click)="autoSave()">Save</button>
+            <button class="btn btn-primary" (click)="exportProject('json')">Export</button>
           </div>
         </div>
 
-        <!-- Tab Content -->
-        <div class="tab-content">
-          <!-- 1. Basic Info Tab -->
-          <div *ngIf="activeTab() === 'basic-info'" class="tab-panel">
-            <div class="section-header">
-              <h2>Basic Information</h2>
-              <p>What are you building, version, date, author, stakeholder, project description</p>
-            </div>
-
-            <div class="content-grid">
-              <!-- Project Details -->
-              <div class="card">
-                <h3>Project Details</h3>
+        <div class="content-body">
+          
+          <!-- Basic Info Tab -->
+          <div *ngIf="activeTab() === 'basic-info'" class="tab-content">
+            <div class="section">
+              <h3 class="section-title">Project Information</h3>
+              <div class="form-grid">
                 <div class="form-group">
-                  <label>Project Title *</label>
+                  <label for="title" class="form-label">Project Title</label>
                   <input 
+                    id="title"
                     type="text" 
-                    class="form-control" 
-                    [ngModel]="project().title" 
-                    (ngModelChange)="updateProject('title', $event)"
+                    class="form-control"
+                    [(ngModel)]="project().title"
                     placeholder="Enter project title">
                 </div>
+                <div class="form-group">
+                  <label for="version" class="form-label">Version</label>
+                  <input 
+                    id="version"
+                    type="text" 
+                    class="form-control"
+                    [(ngModel)]="project().version"
+                    placeholder="1.0.0">
+                </div>
+                <div class="form-group">
+                  <label for="author" class="form-label">Author</label>
+                  <input 
+                    id="author"
+                    type="text" 
+                    class="form-control"
+                    [(ngModel)]="project().author"
+                    placeholder="Project author">
+                </div>
+                <div class="form-group">
+                  <label for="startDate" class="form-label">Start Date</label>
+                  <input 
+                    id="startDate"
+                    type="date" 
+                    class="form-control"
+                    [(ngModel)]="project().startDate">
+                </div>
+                <div class="form-group span-2">
+                  <label for="description" class="form-label">Description</label>
+                  <textarea 
+                    id="description"
+                    class="form-control"
+                    [(ngModel)]="project().description"
+                    placeholder="Project description"
+                    rows="4"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Version</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      [ngModel]="project().version" 
-                      (ngModelChange)="updateProject('version', $event)"
-                      placeholder="1.0.0">
-                  </div>
-                  <div class="form-group">
-                    <label>Start Date</label>
-                    <input 
-                      type="date" 
-                      class="form-control" 
-                      [ngModel]="project().startDate" 
-                      (ngModelChange)="updateProject('startDate', $event)">
-                  </div>
+          <!-- What We Need Tab -->
+          <div *ngIf="activeTab() === 'what-we-need'" class="tab-content">
+            <!-- Section 1: What do you want to achieve -->
+            <div class="section">
+              <h3 class="section-title">What Do You Want to Achieve</h3>
+              
+              <div class="form-group">
+                <label class="form-label">User Experience Goals</label>
+                <textarea 
+                  class="form-control"
+                  [(ngModel)]="whatWeNeed().userExperienceGoals"
+                  placeholder="Define what user experience you want to create. What should users feel when using this system?"
+                  rows="4"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">What's Included</label>
+                <textarea 
+                  class="form-control"
+                  [(ngModel)]="whatWeNeed().whatsIncluded"
+                  placeholder="List all features, functionalities, and components that will be part of this project"
+                  rows="4"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">What's NOT Included</label>
+                <textarea 
+                  class="form-control"
+                  [(ngModel)]="whatWeNeed().whatsNotIncluded"
+                  placeholder="Clearly define what is out of scope for this project to avoid misunderstandings"
+                  rows="4"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Key Assumptions and Dependencies</label>
+                <textarea 
+                  class="form-control"
+                  [(ngModel)]="whatWeNeed().keyAssumptionsAndDependencies"
+                  placeholder="List critical assumptions and external dependencies that could impact the project"
+                  rows="4"></textarea>
+              </div>
+            </div>
+
+            <!-- Section 2: Data Integration Needs -->
+            <div class="section">
+              <h3 class="section-title">Data Integration Needs</h3>
+              
+              <div class="form-group">
+                <label class="form-label">What Information Do You Need to Store?</label>
+                <textarea 
+                  class="form-control"
+                  [(ngModel)]="whatWeNeed().dataStorageNeeds"
+                  placeholder="Describe all the data that needs to be stored, managed, and retrieved by the system"
+                  rows="5"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">External Services and Integrations</label>
+                <textarea 
+                  class="form-control"
+                  [(ngModel)]="whatWeNeed().externalServicesIntegrations"
+                  placeholder="List third-party services, APIs, databases, or systems that need to be integrated"
+                  rows="5"></textarea>
+              </div>
+            </div>
+
+            <!-- Additional Planning Sections -->
+            <div class="section">
+              <h3 class="section-title">Project Planning Details</h3>
+              
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Business Goals</label>
+                  <textarea 
+                    class="form-control"
+                    [(ngModel)]="whatWeNeed().businessGoals"
+                    placeholder="What business objectives will this project achieve?"
+                    rows="3"></textarea>
                 </div>
 
                 <div class="form-group">
-                  <label>Author *</label>
+                  <label class="form-label">Success Metrics</label>
+                  <textarea 
+                    class="form-control"
+                    [(ngModel)]="whatWeNeed().successMetrics"
+                    placeholder="How will you measure the success of this project?"
+                    rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Timeline Expectations</label>
                   <input 
                     type="text" 
-                    class="form-control" 
-                    [ngModel]="project().author" 
-                    (ngModelChange)="updateProject('author', $event)"
-                    placeholder="Project author name">
+                    class="form-control"
+                    [(ngModel)]="whatWeNeed().timelineExpectations"
+                    placeholder="Expected project duration and key milestones">
                 </div>
 
                 <div class="form-group">
-                  <label>Project Description</label>
+                  <label class="form-label">Budget Constraints</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    [(ngModel)]="whatWeNeed().budgetConstraints"
+                    placeholder="Budget limitations and considerations">
+                </div>
+
+                <div class="form-group span-2">
+                  <label class="form-label">Technical Constraints</label>
                   <textarea 
-                    class="form-control" 
-                    rows="4"
-                    [ngModel]="project().description" 
-                    (ngModelChange)="updateProject('description', $event)"
-                    placeholder="Describe your project..."></textarea>
-                </div>
-
-                <div class="form-group">
-                  <label>Status</label>
-                  <select 
-                    class="form-control" 
-                    [ngModel]="project().status" 
-                    (ngModelChange)="updateProject('status', $event)">
-                    <option value="draft">Draft</option>
-                    <option value="active">Active</option>
-                    <option value="review">Review</option>
-                    <option value="completed">Completed</option>
-                  </select>
+                    class="form-control"
+                    [(ngModel)]="whatWeNeed().technicalConstraints"
+                    placeholder="Technical limitations, platform requirements, technology stack constraints"
+                    rows="3"></textarea>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Stakeholders -->
-              <div class="card">
-                <div class="card-header">
-                  <h3>Stakeholders</h3>
-                  <button class="btn btn-sm btn-primary" (click)="addStakeholder()">+ Add Stakeholder</button>
-                </div>
-
-                <div class="stakeholder-list">
-                  <div *ngFor="let stakeholder of stakeholders(); let i = index" class="stakeholder-item">
-                    <div class="stakeholder-info">
-                      <div class="form-row">
-                        <div class="form-group">
-                          <input 
-                            type="text" 
-                            class="form-control" 
-                            [ngModel]="stakeholder.name"
-                            (ngModelChange)="updateStakeholder(i, 'name', $event)"
-                            placeholder="Name">
-                        </div>
-                        <div class="form-group">
-                          <input 
-                            type="text" 
-                            class="form-control" 
-                            [ngModel]="stakeholder.role"
-                            (ngModelChange)="updateStakeholder(i, 'role', $event)"
-                            placeholder="Role">
-                        </div>
+          <!-- Features Tab -->
+          <div *ngIf="activeTab() === 'features'" class="tab-content">
+            <div class="section">
+              <div class="section-header">
+                <h3 class="section-title">Features & Requirements</h3>
+                <button class="btn btn-primary" (click)="addFeature()">
+                  <span class="icon">+</span>
+                  Add Feature
+                </button>
+              </div>
+              
+              <div class="feature-list">
+                <div *ngFor="let feature of features(); let i = index" class="feature-card">
+                  <div class="feature-header">
+                    <div class="form-grid">
+                      <div class="form-group">
+                        <label class="form-label">Feature Title</label>
+                        <input 
+                          type="text" 
+                          class="form-control"
+                          [(ngModel)]="feature.title"
+                          placeholder="Feature title">
                       </div>
-                      <div class="form-row">
-                        <div class="form-group">
-                          <select 
-                            class="form-control" 
-                            [ngModel]="stakeholder.type"
-                            (ngModelChange)="updateStakeholder(i, 'type', $event)">
-                            <option value="primary">Primary</option>
-                            <option value="secondary">Secondary</option>
-                            <option value="reviewer">Reviewer</option>
-                          </select>
-                        </div>
-                        <div class="form-group">
-                          <input 
-                            type="email" 
-                            class="form-control" 
-                            [ngModel]="stakeholder.email"
-                            (ngModelChange)="updateStakeholder(i, 'email', $event)"
-                            placeholder="Email">
-                        </div>
+                      <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        <select class="form-control" [(ngModel)]="feature.priority">
+                          <option value="high">High</option>
+                          <option value="medium">Medium</option>
+                          <option value="low">Low</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Type</label>
+                        <select class="form-control" [(ngModel)]="feature.type">
+                          <option value="functional">Functional</option>
+                          <option value="non-functional">Non-Functional</option>
+                        </select>
                       </div>
                     </div>
-                    <button class="btn btn-sm btn-danger" (click)="removeStakeholder(i)">Remove</button>
+                  </div>
+                  
+                  <div class="feature-body">
+                    <div class="form-group">
+                      <label class="form-label">Description</label>
+                      <textarea 
+                        class="form-control"
+                        [(ngModel)]="feature.description"
+                        placeholder="Detailed feature description"
+                        rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                      <label class="form-label">User Story</label>
+                      <textarea 
+                        class="form-control"
+                        [(ngModel)]="feature.userStory"
+                        placeholder="As a [user type], I want [goal] so that [benefit]"
+                        rows="2"></textarea>
+                    </div>
+                  </div>
+                  
+                  <div class="feature-actions">
+                    <button 
+                      class="btn btn-danger btn-sm"
+                      (click)="removeFeature(i)">
+                      Remove
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 2. What We Need Tab -->
-          <div *ngIf="activeTab() === 'what-we-need'" class="tab-panel">
-            <div class="section-header">
-              <h2>What We Need</h2>
-              <p>What do you want to achieve - user experience goals, what's included, what's not included, key assumptions and dependencies</p>
-            </div>
-
-            <div class="content-grid">
-              <!-- User Experience Goals -->
-              <div class="card">
-                <h3>User Experience Goals</h3>
-                <div class="form-group">
-                  <label>What do you want to achieve?</label>
+          <!-- Success Criteria Tab -->
+          <div *ngIf="activeTab() === 'success-criteria'" class="tab-content">
+            <div class="section">
+              <h3 class="section-title">Testing & Quality Assurance</h3>
+              <div class="form-grid">
+                <div class="form-group span-2">
+                  <label class="form-label">User Testing Plan</label>
                   <textarea 
-                    class="form-control" 
-                    rows="4"
-                    [ngModel]="whatWeNeed().userExperienceGoals" 
-                    (ngModelChange)="updateWhatWeNeed('userExperienceGoals', $event)"
-                    placeholder="Describe the user experience goals..."></textarea>
+                    class="form-control"
+                    [(ngModel)]="successCriteria().userTestingPlan"
+                    placeholder="Describe user testing approach and methodology"
+                    rows="4"></textarea>
                 </div>
-              </div>
-
-              <!-- Scope -->
-              <div class="card">
-                <h3>Project Scope</h3>
-                
                 <div class="form-group">
-                  <label>What's Included</label>
-                  <div class="list-input">
-                    <div *ngFor="let item of whatWeNeed().scopeIncluded || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="item"
-                        (ngModelChange)="updateScopeIncluded(i, $event)"
-                        placeholder="What's included in scope">
-                      <button class="btn btn-sm btn-danger" (click)="removeScopeIncluded(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addScopeIncluded()">+ Add Item</button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>What's NOT Included</label>
-                  <div class="list-input">
-                    <div *ngFor="let item of whatWeNeed().scopeExcluded || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="item"
-                        (ngModelChange)="updateScopeExcluded(i, $event)"
-                        placeholder="What's excluded from scope">
-                      <button class="btn btn-sm btn-danger" (click)="removeScopeExcluded(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addScopeExcluded()">+ Add Item</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Assumptions & Dependencies -->
-              <div class="card">
-                <h3>Key Assumptions & Dependencies</h3>
-                
-                <div class="form-group">
-                  <label>Key Assumptions</label>
-                  <div class="list-input">
-                    <div *ngFor="let item of whatWeNeed().keyAssumptions || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="item"
-                        (ngModelChange)="updateKeyAssumptions(i, $event)"
-                        placeholder="Key assumption">
-                      <button class="btn btn-sm btn-danger" (click)="removeKeyAssumption(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addKeyAssumption()">+ Add Assumption</button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>Dependencies</label>
-                  <div class="list-input">
-                    <div *ngFor="let item of whatWeNeed().dependencies || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="item"
-                        (ngModelChange)="updateDependencies(i, $event)"
-                        placeholder="Project dependency">
-                      <button class="btn btn-sm btn-danger" (click)="removeDependency(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addDependency()">+ Add Dependency</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Data Integration -->
-              <div class="card">
-                <h3>Data Integration Needs</h3>
-                
-                <div class="form-group">
-                  <label>What information do you need to store?</label>
+                  <label class="form-label">Performance Requirements</label>
                   <textarea 
-                    class="form-control" 
-                    rows="4"
-                    [ngModel]="whatWeNeed().dataIntegrationNeeds" 
-                    (ngModelChange)="updateWhatWeNeed('dataIntegrationNeeds', $event)"
-                    placeholder="Describe data storage and integration needs..."></textarea>
+                    class="form-control"
+                    [(ngModel)]="successCriteria().performanceRequirements"
+                    placeholder="Define performance benchmarks"
+                    rows="3"></textarea>
                 </div>
-
                 <div class="form-group">
-                  <label>External Services and Integrations</label>
-                  <div class="list-input">
-                    <div *ngFor="let service of whatWeNeed().externalServices || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="service"
-                        (ngModelChange)="updateExternalServices(i, $event)"
-                        placeholder="External service (e.g., Payment Gateway, Email Service)">
-                      <button class="btn btn-sm btn-danger" (click)="removeExternalService(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addExternalService()">+ Add Service</button>
-                  </div>
+                  <label class="form-label">Security Requirements</label>
+                  <textarea 
+                    class="form-control"
+                    [(ngModel)]="successCriteria().securityRequirements"
+                    placeholder="Security standards and requirements"
+                    rows="3"></textarea>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 3. Data Fields Tab -->
-          <div *ngIf="activeTab() === 'data-fields'" class="tab-panel">
-            <div class="section-header">
-              <h2>Data Fields</h2>
-              <p>Field name, display label, UI control, data type, placeholder text, default value, max length, required, validation rules</p>
-              <button class="btn btn-primary" (click)="addDataField()">+ Add Data Field</button>
-            </div>
-
-            <div class="data-fields-list">
-              <div *ngFor="let field of dataFields(); let i = index" class="data-field-card">
-                <div class="card-header">
-                  <h4>Data Field {{i + 1}}</h4>
-                  <button class="btn btn-sm btn-danger" (click)="removeDataField(i)">Remove</button>
+          <!-- Download Tab -->
+          <div *ngIf="activeTab() === 'download'" class="tab-content">
+            <div class="section">
+              <h3 class="section-title">Export Project Documentation</h3>
+              <div class="export-grid">
+                <div class="export-card">
+                  <h4>JSON Export</h4>
+                  <p>Complete project data in structured format</p>
+                  <button 
+                    class="btn btn-primary"
+                    (click)="exportProject('json')">
+                    Download JSON
+                  </button>
                 </div>
-
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Field Name *</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      [ngModel]="field.fieldName"
-                      (ngModelChange)="updateDataField(i, 'fieldName', $event)"
-                      placeholder="field_name">
-                  </div>
-
-                  <div class="form-group">
-                    <label>Display Label *</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      [ngModel]="field.displayLabel"
-                      (ngModelChange)="updateDataField(i, 'displayLabel', $event)"
-                      placeholder="Field Label">
-                  </div>
-
-                  <div class="form-group">
-                    <label>UI Control</label>
-                    <select 
-                      class="form-control" 
-                      [ngModel]="field.uiControl"
-                      (ngModelChange)="updateDataField(i, 'uiControl', $event)">
-                      <option value="input">Input</option>
-                      <option value="textarea">Textarea</option>
-                      <option value="select">Select</option>
-                      <option value="checkbox">Checkbox</option>
-                      <option value="radio">Radio</option>
-                      <option value="date">Date</option>
-                      <option value="file">File</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label>Data Type</label>
-                    <select 
-                      class="form-control" 
-                      [ngModel]="field.dataType"
-                      (ngModelChange)="updateDataField(i, 'dataType', $event)">
-                      <option value="string">String</option>
-                      <option value="number">Number</option>
-                      <option value="boolean">Boolean</option>
-                      <option value="date">Date</option>
-                      <option value="file">File</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label>Placeholder Text</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      [ngModel]="field.placeholder"
-                      (ngModelChange)="updateDataField(i, 'placeholder', $event)"
-                      placeholder="Enter placeholder text">
-                  </div>
-
-                  <div class="form-group">
-                    <label>Default Value</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      [ngModel]="field.defaultValue"
-                      (ngModelChange)="updateDataField(i, 'defaultValue', $event)"
-                      placeholder="Default value">
-                  </div>
-
-                  <div class="form-group">
-                    <label>Max Length</label>
-                    <input 
-                      type="number" 
-                      class="form-control" 
-                      [ngModel]="field.maxLength"
-                      (ngModelChange)="updateDataField(i, 'maxLength', $event)"
-                      placeholder="Maximum character length">
-                  </div>
-
-                  <div class="form-group">
-                    <label class="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        [ngModel]="field.required"
-                        (ngModelChange)="updateDataField(i, 'required', $event)">
-                      Required Field
-                    </label>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>Validation Rules</label>
-                  <div class="list-input">
-                    <div *ngFor="let rule of field.validationRules || []; let j = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="rule"
-                        (ngModelChange)="updateValidationRule(i, j, $event)"
-                        placeholder="Validation rule (e.g., email, min:5, regex:...)">
-                      <button class="btn btn-sm btn-danger" (click)="removeValidationRule(i, j)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addValidationRule(i)">+ Add Rule</button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>Field Specifications</label>
-                  <textarea 
-                    class="form-control" 
-                    rows="3"
-                    [ngModel]="field.specifications"
-                    (ngModelChange)="updateDataField(i, 'specifications', $event)"
-                    placeholder="Additional specifications for this field..."></textarea>
+                <div class="export-card">
+                  <h4>Text Report</h4>
+                  <p>Human-readable project specification</p>
+                  <button 
+                    class="btn btn-secondary"
+                    (click)="exportProject('txt')">
+                    Download Report
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 4. Features Tab -->
-          <div *ngIf="activeTab() === 'features'" class="tab-panel">
-            <div class="section-header">
-              <h2>Features</h2>
-              <p>What should it do? How important is this? What kind of requirements? Tell us more about it</p>
-              <button class="btn btn-primary" (click)="addFeature()">+ Add Feature</button>
-            </div>
-
-            <div class="features-list">
-              <div *ngFor="let feature of features(); let i = index" class="feature-card">
-                <div class="card-header">
-                  <h4>Feature {{i + 1}}</h4>
-                  <div class="feature-priority">
-                    <span class="priority-badge" [class]="'priority-' + feature.importance">
-                      {{feature.importance}}
-                    </span>
-                    <button class="btn btn-sm btn-danger" (click)="removeFeature(i)">Remove</button>
-                  </div>
-                </div>
-
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Feature Title *</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      [ngModel]="feature.title"
-                      (ngModelChange)="updateFeature(i, 'title', $event)"
-                      placeholder="What should it do?">
-                  </div>
-
-                  <div class="form-group">
-                    <label>Importance Level</label>
-                    <select 
-                      class="form-control" 
-                      [ngModel]="feature.importance"
-                      (ngModelChange)="updateFeature(i, 'importance', $event)">
-                      <option value="high">High - Critical</option>
-                      <option value="medium">Medium - Important</option>
-                      <option value="low">Low - Nice to Have</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label>Requirement Type</label>
-                    <select 
-                      class="form-control" 
-                      [ngModel]="feature.type"
-                      (ngModelChange)="updateFeature(i, 'type', $event)">
-                      <option value="functional">Functional</option>
-                      <option value="non-functional">Non-Functional</option>
-                      <option value="technical">Technical</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>Feature Description</label>
-                  <textarea 
-                    class="form-control" 
-                    rows="3"
-                    [ngModel]="feature.description"
-                    (ngModelChange)="updateFeature(i, 'description', $event)"
-                    placeholder="Describe what this feature does..."></textarea>
-                </div>
-
-                <div class="form-group">
-                  <label>Detailed Specifications</label>
-                  <textarea 
-                    class="form-control" 
-                    rows="4"
-                    [ngModel]="feature.details"
-                    (ngModelChange)="updateFeature(i, 'details', $event)"
-                    placeholder="Tell us more about this requirement - technical details, acceptance criteria, etc."></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 5. Success Criteria Tab -->
-          <div *ngIf="activeTab() === 'success-criteria'" class="tab-panel">
-            <div class="section-header">
-              <h2>Success Criteria</h2>
-              <p>How will you know it's working? Performance and Security requirements</p>
-            </div>
-
-            <div class="content-grid">
-              <!-- Success Metrics -->
-              <div class="card">
-                <h3>How will you know it's working?</h3>
-                
-                <div class="form-group">
-                  <label>Success Criteria</label>
-                  <div class="list-input">
-                    <div *ngFor="let metric of successCriteria().successMetrics || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="metric"
-                        (ngModelChange)="updateSuccessMetrics(i, $event)"
-                        placeholder="Success metric (e.g., 95% uptime, <2s load time)">
-                      <button class="btn btn-sm btn-danger" (click)="removeSuccessMetric(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addSuccessMetric()">+ Add Metric</button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>User Testing Plan</label>
-                  <textarea 
-                    class="form-control" 
-                    rows="4"
-                    [ngModel]="successCriteria().userTestingPlan" 
-                    (ngModelChange)="updateSuccessCriteria('userTestingPlan', $event)"
-                    placeholder="Describe how you will test with users..."></textarea>
-                </div>
-
-                <div class="form-group">
-                  <label>Data Quality Rules</label>
-                  <div class="list-input">
-                    <div *ngFor="let rule of successCriteria().dataQualityRules || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="rule"
-                        (ngModelChange)="updateDataQualityRules(i, $event)"
-                        placeholder="Data quality rule">
-                      <button class="btn btn-sm btn-danger" (click)="removeDataQualityRule(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addDataQualityRule()">+ Add Rule</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Performance & Security -->
-              <div class="card">
-                <h3>Performance and Security</h3>
-                
-                <div class="form-group">
-                  <label>Performance Requirements</label>
-                  <div class="list-input">
-                    <div *ngFor="let req of successCriteria().performanceRequirements || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="req"
-                        (ngModelChange)="updatePerformanceRequirements(i, $event)"
-                        placeholder="Performance requirement (e.g., <2s page load, 1000 concurrent users)">
-                      <button class="btn btn-sm btn-danger" (click)="removePerformanceRequirement(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addPerformanceRequirement()">+ Add Requirement</button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>Security Requirements</label>
-                  <div class="list-input">
-                    <div *ngFor="let req of successCriteria().securityRequirements || []; let i = index" class="list-item">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        [ngModel]="req"
-                        (ngModelChange)="updateSecurityRequirements(i, $event)"
-                        placeholder="Security requirement (e.g., HTTPS, data encryption, user authentication)">
-                      <button class="btn btn-sm btn-danger" (click)="removeSecurityRequirement(i)">×</button>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" (click)="addSecurityRequirement()">+ Add Requirement</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 6. Download Tab -->
-          <div *ngIf="activeTab() === 'download'" class="tab-panel">
-            <div class="section-header">
-              <h2>Download Documentation</h2>
-              <p>Export your project documentation in various formats</p>
-            </div>
-
-            <!-- Document Summary -->
-            <div class="card summary-card">
-              <h3>Document Summary</h3>
-              <div class="summary-grid">
-                <div class="summary-item">
-                  <span class="summary-label">Project Title:</span>
-                  <span class="summary-value">{{project().title || 'Untitled'}}</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-label">Total Features:</span>
-                  <span class="summary-value">{{features().length}}</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-label">High Priority Features:</span>
-                  <span class="summary-value">{{getHighPriorityCount()}}</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-label">Functional Requirements:</span>
-                  <span class="summary-value">{{getFunctionalCount()}}</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-label">Data Fields:</span>
-                  <span class="summary-value">{{dataFields().length}}</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-label">Stakeholders:</span>
-                  <span class="summary-value">{{stakeholders().length}}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Export Options -->
-            <div class="export-grid">
-              <div class="export-card">
-                <div class="export-icon">📄</div>
-                <h4>PDF Document</h4>
-                <p>Generate a comprehensive PDF document with all project information, formatted professionally for stakeholders and development teams.</p>
-                <button class="btn btn-primary" (click)="exportProjectEnhanced('pdf')">Export as PDF</button>
-              </div>
-
-              <div class="export-card">
-                <div class="export-icon">📝</div>
-                <h4>Word Document</h4>
-                <p>Export as an editable Word document (.docx) that can be customized and shared with team members for collaboration.</p>
-                <button class="btn btn-primary" (click)="exportProjectEnhanced('word')">Export as Word</button>
-              </div>
-
-              <div class="export-card">
-                <div class="export-icon">🌐</div>
-                <h4>HTML Document</h4>
-                <p>Export as an interactive HTML document that can be viewed in any web browser with full formatting and styling.</p>
-                <button class="btn btn-primary" (click)="exportProjectEnhanced('html')">Export as HTML</button>
-              </div>
-
-              <div class="export-card">
-                <div class="export-icon">📋</div>
-                <h4>Markdown</h4>
-                <p>Export as Markdown format, perfect for version control systems, wikis, and developer documentation platforms.</p>
-                <button class="btn btn-secondary" (click)="exportProjectEnhanced('markdown')">Export as Markdown</button>
-              </div>
-
-              <div class="export-card">
-                <div class="export-icon">💾</div>
-                <h4>JSON Data</h4>
-                <p>Export project data in JSON format for integration with other tools, backup purposes, or data migration.</p>
-                <button class="btn btn-secondary" (click)="exportJSON()">Export JSON Data</button>
-              </div>
-
-              <div class="export-card">
-                <div class="export-icon">⚙️</div>
-                <h4>Show Keyboard Shortcuts</h4>
-                <p>View all available keyboard shortcuts for efficient project management and navigation.</p>
-                <button class="btn btn-secondary" (click)="showKeyboardHelp()">Show Shortcuts</button>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
+
+      <!-- Right Sidebar -->
+      <aside class="right-sidebar">
+        <div class="sidebar-section">
+          <h3 class="section-title">Project Summary</h3>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total Features</span>
+              <span class="stat-value">{{ features().length }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">High Priority</span>
+              <span class="stat-value">{{ getHighPriorityCount() }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Completion</span>
+              <span class="stat-value">{{ getCompletionPercentage() }}%</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="getCompletionPercentage()"></div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="section-title">Quick Actions</h3>
+          <div class="action-buttons">
+            <button class="action-btn" (click)="autoSave()">
+              💾 Auto Save
+            </button>
+            <button class="action-btn" (click)="validateProject()">
+              ✅ Validate
+            </button>
+            <button class="action-btn" (click)="exportProject('json')">
+              📤 Export
+            </button>
+          </div>
+        </div>
+      </aside>
     </div>
   `,
   styles: [`
-    .project-container {
+    .app-layout {
       display: flex;
-      min-height: 100vh;
+      height: 100vh;
       background: #f8fafc;
     }
 
+    /* Left Sidebar */
     .sidebar {
-      width: 280px;
+      width: 320px;
       background: white;
       border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
       position: fixed;
-      height: 100vh;
-      overflow-y: auto;
       left: 0;
-      top: 0;
-      z-index: 100;
-      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+      top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+      z-index: 10;
     }
 
     .sidebar-header {
-      padding: 2rem 1.5rem 1rem;
+      padding: 1.5rem;
       border-bottom: 1px solid #e2e8f0;
     }
 
-    .sidebar-header h3 {
+    .sidebar-title {
       margin: 0;
-      color: #1e293b;
-      font-size: 1.125rem;
+      font-size: 1.25rem;
       font-weight: 600;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sidebar-subtitle {
+      margin: 0.25rem 0 0 0;
+      font-size: 0.875rem;
+      color: #64748b;
     }
 
     .sidebar-nav {
-      padding: 1rem;
+      flex: 1;
+      padding: 1rem 0;
     }
 
     .nav-item {
-      width: 100%;
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.875rem 1rem;
+      width: 100%;
+      padding: 0.75rem 1.5rem;
       border: none;
       background: none;
       color: #64748b;
       font-size: 0.875rem;
-      border-radius: 0.5rem;
+      text-align: left;
       cursor: pointer;
       transition: all 0.2s;
-      margin-bottom: 0.25rem;
-      text-align: left;
     }
 
     .nav-item:hover {
@@ -908,301 +544,227 @@ interface SuccessCriteria {
     .nav-item.active {
       background: #3b82f6;
       color: white;
+      border-right: 3px solid #2563eb;
     }
 
-    .nav-item .icon {
+    .nav-icon {
       font-size: 1rem;
-    }
-
-    .main-content {
-      margin-left: 280px;
-      flex: 1;
-      min-height: 100vh;
-      width: calc(100% - 280px);
-    }
-
-    .project-header {
-      background: white;
-      border-bottom: 1px solid #e2e8f0;
-      padding: 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      z-index: 10;
-    }
-
-    .project-header h1 {
-      margin: 0 0 0.5rem 0;
-      color: #1e293b;
-      font-size: 1.875rem;
-      font-weight: 700;
-    }
-
-    .project-meta {
-      display: flex;
-      gap: 1.5rem;
-      margin-top: 0.5rem;
-    }
-
-    .meta-item {
-      color: #64748b;
-      font-size: 0.875rem;
-    }
-
-    .status-badge {
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: capitalize;
-    }
-
-    .status-draft { background: #f1f5f9; color: #475569; }
-    .status-active { background: #dcfce7; color: #166534; }
-    .status-review { background: #fef3c7; color: #92400e; }
-    .status-completed { background: #dbeafe; color: #1e40af; }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .auto-save-status {
-      text-align: right;
-      margin-right: 1rem;
-    }
-
-    .save-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      color: #64748b;
-    }
-
-    .save-indicator.saving {
-      color: #3b82f6;
-    }
-
-    .save-indicator.saving .save-icon {
-      animation: pulse 1s infinite;
-    }
-
-    .last-saved {
-      font-size: 0.75rem;
-      color: #9ca3af;
-      margin-top: 0.25rem;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .progress-overview {
-      background: white;
-      border-radius: 1rem;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 3rem;
-      align-items: center;
-    }
-
-    .overall-progress {
-      display: flex;
-      align-items: center;
-      gap: 2rem;
-    }
-
-    .progress-circle {
-      position: relative;
-      width: 120px;
-      height: 120px;
-    }
-
-    .circle-progress {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: conic-gradient(
-        #3b82f6 0deg, 
-        #3b82f6 calc(var(--progress) * 3.6deg), 
-        #e5e7eb calc(var(--progress) * 3.6deg), 
-        #e5e7eb 360deg
-      );
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-
-    .circle-progress::before {
-      content: '';
-      position: absolute;
-      width: 80%;
-      height: 80%;
-      background: white;
-      border-radius: 50%;
-    }
-
-    .progress-number {
-      position: relative;
-      z-index: 1;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #1e293b;
-    }
-
-    .progress-info h3 {
-      margin: 0 0 0.5rem 0;
-      color: #1e293b;
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-
-    .progress-status {
-      margin: 0 0 0.25rem 0;
-      color: #64748b;
-      font-size: 1rem;
-      font-weight: 500;
-    }
-
-    .time-estimate {
-      margin: 0;
-      color: #9ca3af;
-      font-size: 0.875rem;
-    }
-
-    .section-progress-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .section-progress-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      background: #f8fafc;
-      border-radius: 0.75rem;
-      border: 1px solid #e2e8f0;
-    }
-
-    .section-icon {
-      font-size: 1.5rem;
-      width: 40px;
+      width: 1.25rem;
       text-align: center;
     }
 
-    .section-details {
-      flex: 1;
-    }
-
-    .section-details h4 {
-      margin: 0 0 0.5rem 0;
-      color: #1e293b;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .section-progress-bar {
-      height: 0.5rem;
-      background: #e5e7eb;
-      border-radius: 0.25rem;
-      overflow: hidden;
-      margin-bottom: 0.25rem;
-    }
-
-    .section-progress-fill {
-      height: 100%;
-      transition: width 0.3s ease;
-      border-radius: 0.25rem;
-    }
-
-    .section-percentage {
-      font-size: 0.75rem;
-      color: #6b7280;
+    .nav-label {
       font-weight: 500;
     }
 
-    .tab-content {
-      padding: 2rem;
+    .sidebar-footer {
+      padding: 1rem;
+      border-top: 1px solid #e2e8f0;
     }
 
-    .section-header {
-      margin-bottom: 2rem;
-    }
-
-    .section-header h2 {
-      margin: 0 0 0.5rem 0;
-      color: #1e293b;
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-
-    .section-header p {
-      color: #64748b;
-      margin: 0 0 1rem 0;
-    }
-
-    .content-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .card {
-      background: white;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .card h3 {
-      margin: 0 0 1.5rem 0;
-      color: #1e293b;
-      font-size: 1.125rem;
-      font-weight: 600;
-    }
-
-    .card-header {
+    .user-info {
       display: flex;
-      justify-content: between;
       align-items: center;
-      margin-bottom: 1.5rem;
+      gap: 0.75rem;
     }
 
-    .card-header h3,
-    .card-header h4 {
-      margin: 0;
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .user-details {
       flex: 1;
     }
 
-    .form-group {
-      margin-bottom: 1.5rem;
+    .user-name {
+      margin: 0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #1e293b;
     }
 
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
+    .user-role {
+      margin: 0;
+      font-size: 0.75rem;
+      color: #64748b;
     }
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
+    .settings-btn {
+      border: none;
+      background: none;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      transition: background 0.2s;
+    }
+
+    .settings-btn:hover {
+      background: #f1f5f9;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 320px;
+      margin-right: 320px;
+      margin-top: 64px;
+      height: calc(100vh - 64px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .content-header {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
+    }
+
+    .content-title {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .content-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .content-body {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    /* Right Sidebar */
+    .right-sidebar {
+      width: 320px;
+      background: white;
+      border-left: 1px solid #e2e8f0;
+      position: fixed;
+      right: 0;
+      top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    .sidebar-section {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .summary-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
       margin-bottom: 1rem;
     }
 
-    .form-group label {
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+    }
+
+    .stat-label {
+      color: #64748b;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #3b82f6;
+      transition: width 0.3s ease;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .action-btn {
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #374151;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .action-btn:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    /* Content Sections */
+    .section {
+      background: white;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-title {
+      margin: 0 0 1rem 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Forms */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group.span-2 {
+      grid-column: span 2;
+    }
+
+    .form-label {
       display: block;
       margin-bottom: 0.5rem;
       color: #374151;
@@ -1210,18 +772,11 @@ interface SuccessCriteria {
       font-size: 0.875rem;
     }
 
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-    }
-
     .form-control {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid #d1d5db;
-      border-radius: 0.5rem;
+      border-radius: 0.375rem;
       font-size: 0.875rem;
       transition: border-color 0.2s;
     }
@@ -1232,18 +787,19 @@ interface SuccessCriteria {
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
+    /* Buttons */
     .btn {
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: 1px solid transparent;
-      text-decoration: none;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border: 1px solid transparent;
+      border-radius: 0.375rem;
+      font-weight: 500;
       font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
     }
 
     .btn-primary {
@@ -1256,14 +812,21 @@ interface SuccessCriteria {
     }
 
     .btn-secondary {
-      background: white;
-      color: #6b7280;
-      border-color: #d1d5db;
+      background: #6b7280;
+      color: white;
     }
 
     .btn-secondary:hover {
+      background: #4b5563;
+    }
+
+    .btn-outline {
+      border-color: #d1d5db;
+      color: #374151;
+    }
+
+    .btn-outline:hover {
       background: #f9fafb;
-      border-color: #9ca3af;
     }
 
     .btn-danger {
@@ -1276,191 +839,79 @@ interface SuccessCriteria {
     }
 
     .btn-sm {
-      padding: 0.5rem 0.875rem;
+      padding: 0.5rem 1rem;
       font-size: 0.75rem;
     }
 
-    .list-input {
-      border: 1px solid #e5e7eb;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      background: #f9fafb;
-    }
-
-    .list-item {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-      align-items: center;
-    }
-
-    .list-item:last-of-type {
-      margin-bottom: 0.75rem;
-    }
-
-    .stakeholder-list {
-      space-y: 1rem;
-    }
-
-    .stakeholder-item {
-      border: 1px solid #e5e7eb;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      background: #f9fafb;
-      display: flex;
-      gap: 1rem;
-      align-items: start;
-    }
-
-    .stakeholder-info {
-      flex: 1;
-    }
-
-    .data-fields-list,
-    .features-list {
+    /* Features */
+    .feature-list {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
     }
 
-    .data-field-card,
     .feature-card {
-      background: white;
-      border-radius: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
       padding: 1.5rem;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      background: #f8fafc;
     }
 
-    .feature-priority {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .priority-badge {
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: capitalize;
-    }
-
-    .priority-high { background: #fecaca; color: #991b1b; }
-    .priority-medium { background: #fed7aa; color: #9a3412; }
-    .priority-low { background: #bbf7d0; color: #166534; }
-
-    .summary-card {
-      margin-bottom: 2rem;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .summary-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .summary-label {
-      font-size: 0.75rem;
-      color: #6b7280;
-      font-weight: 500;
-    }
-
-    .summary-value {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #1f2937;
-    }
-
-    .export-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .export-card {
-      background: white;
-      border-radius: 0.75rem;
-      padding: 2rem;
-      border: 1px solid #e2e8f0;
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .export-icon {
-      font-size: 3rem;
+    .feature-header {
       margin-bottom: 1rem;
     }
 
+    .feature-body {
+      margin-bottom: 1rem;
+    }
+
+    .feature-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Export */
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .export-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
     .export-card h4 {
-      margin: 0 0 0.75rem 0;
+      margin: 0 0 0.5rem 0;
       color: #1e293b;
-      font-size: 1.125rem;
-      font-weight: 600;
     }
 
     .export-card p {
+      margin: 0 0 1rem 0;
       color: #64748b;
       font-size: 0.875rem;
-      margin-bottom: 1.5rem;
-      line-height: 1.5;
     }
 
-    @media (max-width: 768px) {
-      .sidebar {
-        position: relative;
-        width: 100%;
-        height: auto;
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .sidebar, .right-sidebar {
+        display: none;
       }
-
+      
       .main-content {
         margin-left: 0;
+        margin-right: 0;
       }
-
-      .project-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-      }
-
-      .content-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .form-row,
+      
       .form-grid {
         grid-template-columns: 1fr;
       }
-
-      .tab-content {
-        padding: 1rem;
-      }
-    }
-
-    /* Responsive Design for Sidebar */
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-      }
       
-      .sidebar.open {
-        transform: translateX(0);
-      }
-      
-      .main-content {
-        margin-left: 0;
-        width: 100%;
-      }
-      
-      .project-header {
-        padding: 1rem;
+      .form-group.span-2 {
+        grid-column: span 1;
       }
     }
   `]
@@ -1468,338 +919,183 @@ interface SuccessCriteria {
 export class ProjectDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly autoSaveService = inject(AutoSaveService);
-  private readonly progressService = inject(ProgressTrackingService);
-  private readonly exportService = inject(DocumentExportService);
-  private readonly keyboardService = inject(KeyboardShortcutService);
-  private readonly a11yService = inject(AccessibilityService);
 
-  // Auto-save and progress signals
-  isSaving = this.autoSaveService.isAutoSaving;
-  hasUnsavedChanges = this.autoSaveService.hasUnsavedChanges;
-  lastSavedText = signal('');
-
-  activeTab = signal<string>('basic-info');
+  // Signals for reactive state
+  activeTab = signal('basic-info');
+  
   project = signal<Project>({
-    id: '',
-    title: '',
+    id: '1',
+    title: 'E-Commerce Platform Requirements',
     version: '1.0.0',
-    startDate: '',
-    author: '',
-    description: '',
-    status: 'draft'
+    startDate: '2024-01-15',
+    author: 'John Smith',
+    description: 'Comprehensive requirements for a modern e-commerce platform with advanced features',
+    status: 'active'
   });
 
-  stakeholders = signal<Stakeholder[]>([]);
+  stakeholders = signal<Stakeholder[]>([
+    {
+      id: '1',
+      name: 'John Smith',
+      role: 'Product Manager',
+      type: 'primary',
+      email: 'john.smith@company.com',
+      phone: '+1-555-0123'
+    },
+    {
+      id: '2',
+      name: 'Sarah Wilson',
+      role: 'UX Designer',
+      type: 'secondary',
+      email: 'sarah.wilson@company.com',
+      phone: '+1-555-0124'
+    }
+  ]);
+
   whatWeNeed = signal<WhatWeNeed>({
-    userExperienceGoals: '',
-    scopeIncluded: [],
-    scopeExcluded: [],
-    keyAssumptions: [],
-    dependencies: [],
-    dataIntegrationNeeds: '',
-    externalServices: []
+    userExperienceGoals: 'Create an intuitive, fast, and accessible shopping experience that works seamlessly across all devices.',
+    scopeIncluded: ['User authentication', 'Product catalog', 'Shopping cart', 'Payment processing', 'Order management'],
+    scopeExcluded: ['Mobile app development', 'Third-party marketplace integration', 'Advanced analytics dashboard'],
+    keyAssumptions: ['Users have basic internet literacy', 'Payment gateway APIs are available', 'Product data is provided by client'],
+    dependencies: ['Payment gateway integration', 'Inventory management system', 'Email service provider'],
+    dataIntegrationNeeds: 'Integration with payment gateways, inventory management, and customer relationship management systems.',
+    externalServices: ['Stripe Payment Gateway', 'SendGrid Email Service', 'AWS S3 Storage', 'Google Analytics']
   });
 
-  dataFields = signal<DataField[]>([]);
-  features = signal<Feature[]>([]);
+  dataFields = signal<DataField[]>([
+    {
+      id: '1',
+      fieldName: 'firstName',
+      displayLabel: 'First Name',
+      uiControl: 'input',
+      dataType: 'string',
+      placeholder: 'Enter your first name',
+      defaultValue: '',
+      maxLength: 50,
+      required: true,
+      validationRules: ['Required', 'Min 2 characters', 'Letters only'],
+      specifications: 'User\'s legal first name for account creation'
+    },
+    {
+      id: '2',
+      fieldName: 'email',
+      displayLabel: 'Email Address',
+      uiControl: 'email',
+      dataType: 'email',
+      placeholder: 'Enter your email address',
+      defaultValue: '',
+      maxLength: 100,
+      required: true,
+      validationRules: ['Required', 'Valid email format', 'Unique in system'],
+      specifications: 'Primary contact email for user account and notifications'
+    }
+  ]);
+
+  features = signal<Feature[]>([
+    {
+      id: '1',
+      title: 'User Authentication System',
+      type: 'functional',
+      priority: 'high',
+      description: 'Secure user registration, login, and profile management',
+      userStory: 'As a customer, I want to create an account and log in securely so that I can track my orders and save my preferences.',
+      acceptanceCriteria: [
+        'User can register with email and password',
+        'User can log in with valid credentials',
+        'Password reset functionality works',
+        'User profile can be updated'
+      ],
+      businessRules: [
+        'Passwords must be at least 8 characters',
+        'Email addresses must be unique',
+        'Users must verify email before full access'
+      ],
+      testingNotes: 'Test with various email formats and password combinations',
+      status: 'draft'
+    },
+    {
+      id: '2', 
+      title: 'Product Search and Filtering',
+      type: 'functional',
+      priority: 'high',
+      description: 'Advanced search functionality with filters and sorting options',
+      userStory: 'As a customer, I want to search for products and filter results so that I can quickly find what I am looking for.',
+      acceptanceCriteria: [
+        'Search returns relevant results',
+        'Filters work correctly',
+        'Sort options function properly',
+        'Search is fast and responsive'
+      ],
+      businessRules: [
+        'Search results should be ranked by relevance',
+        'Out-of-stock items shown but marked',
+        'Search history saved for logged-in users'
+      ],
+      testingNotes: 'Test search performance with large product catalogs',
+      status: 'draft'
+    }
+  ]);
+
   successCriteria = signal<SuccessCriteria>({
-    successMetrics: [],
-    userTestingPlan: '',
-    dataQualityRules: [],
-    performanceRequirements: [],
-    securityRequirements: []
+    userTestingPlan: 'Conduct usability testing with target users, A/B testing for key features, and accessibility testing compliance.',
+    dataQualityRules: 'All user data must be validated, product information must be accurate and up-to-date, order data must be consistent across systems.',
+    performanceRequirements: 'Page load times under 2 seconds, 99.9% uptime, support for 10,000 concurrent users.',
+    securityRequirements: 'HTTPS encryption, PCI DSS compliance, secure payment processing, data privacy compliance.',
+    accessibilityStandards: ['WCAG 2.1 AA', 'Section 508', 'ADA Compliance'],
+    browserCompatibility: ['Chrome 90+', 'Firefox 88+', 'Safari 14+', 'Edge 90+'],
+    deviceCompatibility: ['Desktop 1920x1080+', 'Tablet 768x1024+', 'Mobile 375x667+']
   });
+
+  tabs = [
+    { id: 'basic-info', label: 'Basic Info', icon: '📋' },
+    { id: 'what-we-need', label: 'What We Need', icon: '🎯' },
+    { id: 'data-fields', label: 'Data Fields', icon: '📊' },
+    { id: 'features', label: 'Features', icon: '⚡' },
+    { id: 'success-criteria', label: 'Success Criteria', icon: '✅' },
+    { id: 'download', label: 'Download', icon: '⬇️' }
+  ];
 
   ngOnInit() {
-    const projectId = this.route.snapshot.paramMap.get('id');
-    if (projectId && projectId !== 'new') {
-      this.loadProject(projectId);
-    } else {
-      this.initializeNewProject();
-    }
-
-    // Start auto-save
-    this.autoSaveService.startAutoSave(projectId || 'new', async (data) => {
-      await this.saveProjectData(data);
-    });
-
-    // Update last saved text periodically
-    setInterval(() => {
-      this.lastSavedText.set(this.autoSaveService.getFormattedLastSaved());
-    }, 1000);
-
-    // Setup keyboard shortcuts (only in browser)
-    if (typeof window !== 'undefined') {
-      this.setupKeyboardShortcuts();
-    }
-
-    // Setup accessibility (only in browser)
-    if (typeof window !== 'undefined') {
-      this.setupAccessibility();
-    }
+    console.log('Project Detail Component initialized');
   }
 
-  // Progress tracking methods
-  calculateOverallProgress(): number {
-    const projectData = {
-      project: this.project(),
-      stakeholders: this.stakeholders(),
-      whatWeNeed: this.whatWeNeed(),
-      dataFields: this.dataFields(),
-      features: this.features(),
-      successCriteria: this.successCriteria()
+  setActiveTab(tabId: string) {
+    this.activeTab.set(tabId);
+  }
+
+  addFeature() {
+    const currentFeatures = this.features();
+    const newFeature: Feature = {
+      id: Date.now().toString(),
+      title: '',
+      type: 'functional',
+      priority: 'medium',
+      description: '',
+      userStory: '',
+      acceptanceCriteria: [],
+      businessRules: [],
+      testingNotes: '',
+      status: 'draft'
     };
-
-    const metrics = this.progressService.calculateProgress(projectData);
-    return metrics.progressPercentage;
+    this.features.set([...currentFeatures, newFeature]);
   }
 
-  getProgressStatus(): string {
-    const progress = this.calculateOverallProgress();
-    return this.progressService.getProgressStatus(progress);
-  }
-
-  getTimeEstimate(): string {
-    const projectData = {
-      project: this.project(),
-      stakeholders: this.stakeholders(),
-      whatWeNeed: this.whatWeNeed(),
-      dataFields: this.dataFields(),
-      features: this.features(),
-      successCriteria: this.successCriteria()
-    };
-
-    const metrics = this.progressService.calculateProgress(projectData);
-    return metrics.estimatedTimeToComplete;
-  }
-
-  getSectionProgress() {
-    const projectData = {
-      project: this.project(),
-      stakeholders: this.stakeholders(),
-      whatWeNeed: this.whatWeNeed(),
-      dataFields: this.dataFields(),
-      features: this.features(),
-      successCriteria: this.successCriteria()
-    };
-
-    const metrics = this.progressService.calculateProgress(projectData);
-    
-    return [
-      {
-        name: 'Basic Info',
-        icon: '📋',
-        progress: metrics.sectionProgress.basicInfo,
-        color: this.progressService.getProgressColor(metrics.sectionProgress.basicInfo)
-      },
-      {
-        name: 'What We Need',
-        icon: '🎯',
-        progress: metrics.sectionProgress.whatWeNeed,
-        color: this.progressService.getProgressColor(metrics.sectionProgress.whatWeNeed)
-      },
-      {
-        name: 'Data Fields',
-        icon: '📊',
-        progress: metrics.sectionProgress.dataFields,
-        color: this.progressService.getProgressColor(metrics.sectionProgress.dataFields)
-      },
-      {
-        name: 'Features',
-        icon: '⚡',
-        progress: metrics.sectionProgress.features,
-        color: this.progressService.getProgressColor(metrics.sectionProgress.features)
-      },
-      {
-        name: 'Success Criteria',
-        icon: '✅',
-        progress: metrics.sectionProgress.successCriteria,
-        color: this.progressService.getProgressColor(metrics.sectionProgress.successCriteria)
-      },
-      {
-        name: 'Download Ready',
-        icon: '⬇️',
-        progress: metrics.sectionProgress.download,
-        color: this.progressService.getProgressColor(metrics.sectionProgress.download)
-      }
-    ];
-  }
-
-  // Auto-save method
-  private async saveProjectData(data: any): Promise<void> {
-    // This would normally save to backend
-    console.log('Auto-saving project data:', data);
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
-
-  setActiveTab(tab: string) {
-    this.activeTab.set(tab);
-    this.trackChange('activeTab', tab);
-  }
-
-  private trackChange(section: string, data: any) {
-    const projectId = this.route.snapshot.paramMap.get('id') || 'new';
-    this.autoSaveService.trackChanges(projectId, section, data);
-  }
-
-  // Project methods
-  updateProject(field: keyof Project, value: any) {
-    this.project.update(p => ({ ...p, [field]: value }));
-    this.trackChange('project', this.project());
-  }
-
-  // Stakeholder methods
   addStakeholder() {
-    this.stakeholders.update(list => [...list, {
+    const currentStakeholders = this.stakeholders();
+    const newStakeholder: Stakeholder = {
       id: Date.now().toString(),
       name: '',
       role: '',
-      type: 'primary',
-      email: ''
-    }]);
-
-    // Announce to screen reader users
-    this.a11yService.announce('New stakeholder added');
-    
-    // Focus the new stakeholder form
-    setTimeout(() => {
-      const newStakeholderIndex = this.stakeholders().length - 1;
-      this.a11yService.focusElement(`#stakeholder-${newStakeholderIndex}-name`);
-    }, 100);
+      type: 'secondary',
+      email: '',
+      phone: ''
+    };
+    this.stakeholders.set([...currentStakeholders, newStakeholder]);
   }
 
-  updateStakeholder(index: number, field: keyof Stakeholder, value: any) {
-    this.stakeholders.update(list => {
-      const updated = [...list];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  }
-
-  removeStakeholder(index: number) {
-    this.stakeholders.update(list => list.filter((_, i) => i !== index));
-  }
-
-  // What We Need methods
-  updateWhatWeNeed(field: keyof WhatWeNeed, value: any) {
-    this.whatWeNeed.update(w => ({ ...w, [field]: value }));
-  }
-
-  addScopeIncluded() {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      scopeIncluded: [...w.scopeIncluded, '']
-    }));
-  }
-
-  updateScopeIncluded(index: number, value: string) {
-    this.whatWeNeed.update(w => {
-      const updated = [...w.scopeIncluded];
-      updated[index] = value;
-      return { ...w, scopeIncluded: updated };
-    });
-  }
-
-  removeScopeIncluded(index: number) {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      scopeIncluded: w.scopeIncluded.filter((_, i) => i !== index)
-    }));
-  }
-
-  addScopeExcluded() {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      scopeExcluded: [...w.scopeExcluded, '']
-    }));
-  }
-
-  updateScopeExcluded(index: number, value: string) {
-    this.whatWeNeed.update(w => {
-      const updated = [...w.scopeExcluded];
-      updated[index] = value;
-      return { ...w, scopeExcluded: updated };
-    });
-  }
-
-  removeScopeExcluded(index: number) {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      scopeExcluded: w.scopeExcluded.filter((_, i) => i !== index)
-    }));
-  }
-
-  addKeyAssumption() {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      keyAssumptions: [...w.keyAssumptions, '']
-    }));
-  }
-
-  updateKeyAssumptions(index: number, value: string) {
-    this.whatWeNeed.update(w => {
-      const updated = [...w.keyAssumptions];
-      updated[index] = value;
-      return { ...w, keyAssumptions: updated };
-    });
-  }
-
-  removeKeyAssumption(index: number) {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      keyAssumptions: w.keyAssumptions.filter((_, i) => i !== index)
-    }));
-  }
-
-  addDependency() {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      dependencies: [...w.dependencies, '']
-    }));
-  }
-
-  updateDependencies(index: number, value: string) {
-    this.whatWeNeed.update(w => {
-      const updated = [...w.dependencies];
-      updated[index] = value;
-      return { ...w, dependencies: updated };
-    });
-  }
-
-  removeDependency(index: number) {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      dependencies: w.dependencies.filter((_, i) => i !== index)
-    }));
-  }
-
-  addExternalService() {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      externalServices: [...w.externalServices, '']
-    }));
-  }
-
-  updateExternalServices(index: number, value: string) {
-    this.whatWeNeed.update(w => {
-      const updated = [...w.externalServices];
-      updated[index] = value;
-      return { ...w, externalServices: updated };
-    });
-  }
-
-  removeExternalService(index: number) {
-    this.whatWeNeed.update(w => ({
-      ...w,
-      externalServices: w.externalServices.filter((_, i) => i !== index)
-    }));
-  }
-
-  // Data Fields methods
   addDataField() {
-    this.dataFields.update(list => [...list, {
+    const currentFields = this.dataFields();
+    const newField: DataField = {
       id: Date.now().toString(),
       fieldName: '',
       displayLabel: '',
@@ -1811,263 +1107,62 @@ export class ProjectDetailComponent implements OnInit {
       required: false,
       validationRules: [],
       specifications: ''
-    }]);
-
-    // Announce to screen reader users
-    this.a11yService.announce('New data field added');
-    
-    // Focus the new data field form
-    setTimeout(() => {
-      const newFieldIndex = this.dataFields().length - 1;
-      this.a11yService.focusElement(`#datafield-${newFieldIndex}-name`);
-    }, 100);
-  }
-
-  updateDataField(index: number, field: keyof DataField, value: any) {
-    this.dataFields.update(list => {
-      const updated = [...list];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  }
-
-  removeDataField(index: number) {
-    this.dataFields.update(list => list.filter((_, i) => i !== index));
-  }
-
-  addValidationRule(fieldIndex: number) {
-    this.dataFields.update(list => {
-      const updated = [...list];
-      updated[fieldIndex] = {
-        ...updated[fieldIndex],
-        validationRules: [...updated[fieldIndex].validationRules, '']
-      };
-      return updated;
-    });
-  }
-
-  updateValidationRule(fieldIndex: number, ruleIndex: number, value: string) {
-    this.dataFields.update(list => {
-      const updated = [...list];
-      const rules = [...updated[fieldIndex].validationRules];
-      rules[ruleIndex] = value;
-      updated[fieldIndex] = { ...updated[fieldIndex], validationRules: rules };
-      return updated;
-    });
-  }
-
-  removeValidationRule(fieldIndex: number, ruleIndex: number) {
-    this.dataFields.update(list => {
-      const updated = [...list];
-      updated[fieldIndex] = {
-        ...updated[fieldIndex],
-        validationRules: updated[fieldIndex].validationRules.filter((_, i) => i !== ruleIndex)
-      };
-      return updated;
-    });
-  }
-
-  // Features methods
-  addFeature() {
-    this.features.update(list => [...list, {
-      id: Date.now().toString(),
-      title: '',
-      description: '',
-      importance: 'medium',
-      type: 'functional',
-      details: ''
-    }]);
-
-    // Announce to screen reader users
-    this.a11yService.announce('New feature added');
-    
-    // Focus the new feature form
-    setTimeout(() => {
-      const newFeatureIndex = this.features().length - 1;
-      this.a11yService.focusElement(`#feature-${newFeatureIndex}-title`);
-    }, 100);
-  }
-
-  updateFeature(index: number, field: keyof Feature, value: any) {
-    this.features.update(list => {
-      const updated = [...list];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
+    };
+    this.dataFields.set([...currentFields, newField]);
   }
 
   removeFeature(index: number) {
-    this.features.update(list => list.filter((_, i) => i !== index));
+    const currentFeatures = this.features();
+    currentFeatures.splice(index, 1);
+    this.features.set([...currentFeatures]);
   }
 
-  // Success Criteria methods
-  updateSuccessCriteria(field: keyof SuccessCriteria, value: any) {
-    this.successCriteria.update(s => ({ ...s, [field]: value }));
+  removeStakeholder(index: number) {
+    const currentStakeholders = this.stakeholders();
+    currentStakeholders.splice(index, 1);
+    this.stakeholders.set([...currentStakeholders]);
   }
 
-  addSuccessMetric() {
-    this.successCriteria.update(s => ({
-      ...s,
-      successMetrics: [...s.successMetrics, '']
-    }));
+  removeDataField(index: number) {
+    const currentFields = this.dataFields();
+    currentFields.splice(index, 1);
+    this.dataFields.set([...currentFields]);
   }
 
-  updateSuccessMetrics(index: number, value: string) {
-    this.successCriteria.update(s => {
-      const updated = [...s.successMetrics];
-      updated[index] = value;
-      return { ...s, successMetrics: updated };
-    });
-  }
-
-  removeSuccessMetric(index: number) {
-    this.successCriteria.update(s => ({
-      ...s,
-      successMetrics: s.successMetrics.filter((_, i) => i !== index)
-    }));
-  }
-
-  addDataQualityRule() {
-    this.successCriteria.update(s => ({
-      ...s,
-      dataQualityRules: [...s.dataQualityRules, '']
-    }));
-  }
-
-  updateDataQualityRules(index: number, value: string) {
-    this.successCriteria.update(s => {
-      const updated = [...s.dataQualityRules];
-      updated[index] = value;
-      return { ...s, dataQualityRules: updated };
-    });
-  }
-
-  removeDataQualityRule(index: number) {
-    this.successCriteria.update(s => ({
-      ...s,
-      dataQualityRules: s.dataQualityRules.filter((_, i) => i !== index)
-    }));
-  }
-
-  addPerformanceRequirement() {
-    this.successCriteria.update(s => ({
-      ...s,
-      performanceRequirements: [...s.performanceRequirements, '']
-    }));
-  }
-
-  updatePerformanceRequirements(index: number, value: string) {
-    this.successCriteria.update(s => {
-      const updated = [...s.performanceRequirements];
-      updated[index] = value;
-      return { ...s, performanceRequirements: updated };
-    });
-  }
-
-  removePerformanceRequirement(index: number) {
-    this.successCriteria.update(s => ({
-      ...s,
-      performanceRequirements: s.performanceRequirements.filter((_, i) => i !== index)
-    }));
-  }
-
-  addSecurityRequirement() {
-    this.successCriteria.update(s => ({
-      ...s,
-      securityRequirements: [...s.securityRequirements, '']
-    }));
-  }
-
-  updateSecurityRequirements(index: number, value: string) {
-    this.successCriteria.update(s => {
-      const updated = [...s.securityRequirements];
-      updated[index] = value;
-      return { ...s, securityRequirements: updated };
-    });
-  }
-
-  removeSecurityRequirement(index: number) {
-    this.successCriteria.update(s => ({
-      ...s,
-      securityRequirements: s.securityRequirements.filter((_, i) => i !== index)
-    }));
-  }
-
-  // Summary methods
   getHighPriorityCount(): number {
-    return this.features().filter(f => f.importance === 'high').length;
+    return this.features().filter(f => f.priority === 'high').length;
   }
 
   getFunctionalCount(): number {
     return this.features().filter(f => f.type === 'functional').length;
   }
 
-  // Utility methods
-  private loadProject(id: string) {
-    // In a real app, this would load from API
-    console.log('Loading project:', id);
+  getNonFunctionalCount(): number {
+    return this.features().filter(f => f.type === 'non-functional').length;
   }
 
-  private initializeNewProject() {
-    // Initialize with some sample data for demonstration
-    this.project.set({
-      id: 'new',
-      title: 'My New Project',
-      version: '1.0.0',
-      startDate: new Date().toISOString().split('T')[0],
-      author: 'Project Manager',
-      description: '',
-      status: 'draft'
-    });
+  getCompletionPercentage(): number {
+    const features = this.features();
+    if (features.length === 0) return 0;
+    const completed = features.filter(f => f.status === 'implemented' || f.status === 'approved').length;
+    return Math.round((completed / features.length) * 100);
   }
 
-  async saveProject() {
-    try {
-      const projectData = {
-        project: this.project(),
-        stakeholders: this.stakeholders(),
-        whatWeNeed: this.whatWeNeed(),
-        dataFields: this.dataFields(),
-        features: this.features(),
-        successCriteria: this.successCriteria()
-      };
-
-      const projectId = this.route.snapshot.paramMap.get('id') || 'new';
-      await this.autoSaveService.manualSave(projectId, projectData);
-      
-      console.log('Project saved manually:', projectData);
-      alert('Project saved successfully!');
-      
-      // Announce to screen reader users
-      this.a11yService.announceSave(this.project().title || 'Project');
-    } catch (error) {
-      console.error('Save failed:', error);
-      alert('Failed to save project. Please try again.');
-      this.a11yService.announceError('Failed to save project');
-    }
+  getTotalRequirements(): number {
+    return this.features().length + this.dataFields().length;
   }
 
-  goBack() {
-    this.router.navigate(['/projects']);
+  autoSave() {
+    console.log('Auto-saving project...');
+    // Implement auto-save logic
   }
 
-  // Export methods
-  exportPDF() {
-    console.log('Exporting PDF...');
-    alert('PDF export functionality would be implemented here.');
+  validateProject() {
+    console.log('Validating project...');
+    // Implement validation logic
   }
 
-  exportWord() {
-    console.log('Exporting Word document...');
-    alert('Word export functionality would be implemented here.');
-  }
-
-  exportComplete() {
-    console.log('Exporting complete package...');
-    alert('Complete package export functionality would be implemented here.');
-  }
-
-  exportJSON() {
+  exportProject(format: 'json' | 'txt' | 'pdf' | 'word' | 'package') {
     const projectData = {
       project: this.project(),
       stakeholders: this.stakeholders(),
@@ -2075,225 +1170,180 @@ export class ProjectDetailComponent implements OnInit {
       dataFields: this.dataFields(),
       features: this.features(),
       successCriteria: this.successCriteria(),
-      exportedAt: new Date().toISOString()
+      summary: {
+        totalRequirements: this.getTotalRequirements(),
+        highPriority: this.getHighPriorityCount(),
+        functional: this.getFunctionalCount(),
+        nonFunctional: this.getNonFunctionalCount(),
+        completion: this.getCompletionPercentage()
+      }
     };
 
-    const dataStr = JSON.stringify(projectData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = window.URL.createObjectURL(dataBlob);
+    let content: string;
+    let filename: string;
+    let mimeType: string;
+
+    switch (format) {
+      case 'json':
+        content = JSON.stringify(projectData, null, 2);
+        filename = `${this.project().title || 'project'}-specification.json`;
+        mimeType = 'application/json';
+        break;
+      case 'txt':
+        content = this.generateTextReport(projectData);
+        filename = `${this.project().title || 'project'}-specification.txt`;
+        mimeType = 'text/plain';
+        break;
+      case 'pdf':
+        // For PDF, we would need a PDF library like jsPDF
+        alert('PDF export functionality coming soon!');
+        return;
+      case 'word':
+        // For Word, we would need a library like docx
+        alert('Word export functionality coming soon!');
+        return;
+      case 'package':
+        content = JSON.stringify(projectData, null, 2);
+        filename = `${this.project().title || 'project'}-complete-package.json`;
+        mimeType = 'application/json';
+        break;
+      default:
+        return;
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${this.project().title || 'project'}-specification.json`;
+    a.download = filename;
     a.click();
     window.URL.revokeObjectURL(url);
   }
 
-  // Enhanced Export with Professional Features
-  async exportProjectEnhanced(format: 'pdf' | 'word' | 'json' | 'html' | 'markdown' = 'pdf') {
-    const projectData = {
-      project: this.project(),
-      stakeholders: this.stakeholders(),
-      whatWeNeed: this.whatWeNeed(),
-      dataFields: this.dataFields(),
-      features: this.features(),
-      successCriteria: this.successCriteria()
-    };
-
-    const options: ExportOptions = {
-      format,
-      includeImages: true,
-      includeTables: true,
-      template: 'standard',
-      sections: ['basic-info', 'stakeholders', 'what-we-need', 'data-fields', 'features', 'success-criteria']
-    };
-
-    await this.exportService.exportProject(projectData, options);
+  private generateTextReport(data: any): string {
+    let report = '';
     
-    // Announce to screen reader users
-    this.a11yService.announce(`Project exported as ${format.toUpperCase()} successfully`);
-  }
+    // Project Information
+    report += '='.repeat(60) + '\n';
+    report += `PROJECT SPECIFICATION DOCUMENT\n`;
+    report += '='.repeat(60) + '\n\n';
+    
+    report += `Project Title: ${data.project.title}\n`;
+    report += `Description: ${data.project.description}\n`;
+    report += `Start Date: ${data.project.startDate || 'Not specified'}\n`;
+    report += `End Date: ${data.project.endDate || 'Not specified'}\n`;
+    report += `Status: ${data.project.status}\n`;
+    report += `Priority: ${data.project.priority}\n\n`;
 
-  // Keyboard Shortcuts Setup
-  private setupKeyboardShortcuts() {
-    const shortcuts = this.keyboardService.getDefaultProjectShortcuts({
-      save: () => this.saveProject(),
-      export: () => this.exportProjectEnhanced(),
-      newProject: () => this.router.navigate(['/projects/new']),
-      search: () => this.focusSearchField(),
-      help: () => this.showKeyboardHelp(),
-      undo: () => this.undo(),
-      redo: () => this.redo(),
-      copy: () => this.copySelection(),
-      paste: () => this.pasteSelection(),
-      selectAll: () => this.selectAllText(),
-      find: () => this.findInProject(),
-      addStakeholder: () => this.addStakeholder(),
-      addFeature: () => this.addFeature(),
-      addDataField: () => this.addDataField(),
-      nextTab: () => this.switchToNextTab(),
-      prevTab: () => this.switchToPreviousTab(),
-      togglePreview: () => this.togglePreviewMode()
-    });
+    // Stakeholders
+    if (data.stakeholders && data.stakeholders.length > 0) {
+      report += 'STAKEHOLDERS\n';
+      report += '-'.repeat(40) + '\n';
+      data.stakeholders.forEach((stakeholder: any, index: number) => {
+        report += `${index + 1}. ${stakeholder.name} (${stakeholder.role})\n`;
+        report += `   Email: ${stakeholder.email}\n`;
+        report += `   Department: ${stakeholder.department}\n`;
+        report += `   Responsibilities: ${stakeholder.responsibilities}\n\n`;
+      });
+    }
 
-    this.keyboardService.registerShortcuts(shortcuts);
-  }
+    // What We Need
+    if (data.whatWeNeed) {
+      report += 'WHAT WE NEED\n';
+      report += '-'.repeat(40) + '\n';
+      report += `User Experience Goals: ${data.whatWeNeed.userExperienceGoals}\n`;
+      report += `Business Goals: ${data.whatWeNeed.businessGoals}\n`;
+      report += `Scope Definition: ${data.whatWeNeed.scopeDefinition}\n`;
+      report += `Key Constraints: ${data.whatWeNeed.keyConstraints}\n`;
+      report += `Success Metrics: ${data.whatWeNeed.successMetrics}\n`;
+      report += `Timeline Expectations: ${data.whatWeNeed.timelineExpectations}\n`;
+      report += `Budget Constraints: ${data.whatWeNeed.budgetConstraints}\n`;
+      report += `Technical Constraints: ${data.whatWeNeed.technicalConstraints}\n`;
+      report += `External Dependencies: ${data.whatWeNeed.externalDependencies}\n`;
+      report += `Compliance Requirements: ${data.whatWeNeed.complianceRequirements}\n\n`;
+    }
 
-  // Accessibility Setup
-  private setupAccessibility() {
-    // Only setup accessibility in browser environment
-    if (typeof window !== 'undefined') {
-      // Announce navigation to project
-      this.a11yService.announceNavigation('Projects List', `Project: ${this.project().title || 'New Project'}`);
-      
-      // Setup form accessibility
-      setTimeout(() => {
-        if (typeof document !== 'undefined') {
-          const formElement = document.querySelector('form');
-          if (formElement) {
-            this.a11yService.addFormFieldDescriptions(formElement);
-          }
+    // Data Fields
+    if (data.dataFields && data.dataFields.length > 0) {
+      report += 'DATA FIELDS\n';
+      report += '-'.repeat(40) + '\n';
+      data.dataFields.forEach((field: any, index: number) => {
+        report += `${index + 1}. ${field.name} (${field.type})\n`;
+        report += `   Description: ${field.description}\n`;
+        report += `   Required: ${field.required ? 'Yes' : 'No'}\n`;
+        report += `   Default Value: ${field.defaultValue || 'None'}\n`;
+        if (field.validationRules) {
+          report += `   Validation: ${field.validationRules}\n`;
         }
-      }, 100);
-      
-      // Setup progress accessibility
-      setTimeout(() => {
-        if (typeof document !== 'undefined') {
-          const progressElements = document.querySelectorAll('.progress-circle, .progress-bar');
-          progressElements.forEach((element, index) => {
-            const section = ['Basic Info', 'Stakeholders', 'What We Need', 'Data Fields', 'Features', 'Success Criteria'][index];
-            if (section) {
-              const progress = this.progressService.calculateProgress({
-                project: this.project(),
-                stakeholders: this.stakeholders(),
-                whatWeNeed: this.whatWeNeed(),
-                dataFields: this.dataFields(),
-                features: this.features(),
-                successCriteria: this.successCriteria()
-              });
-              
-              this.a11yService.makeProgressAccessible(element, `${section} completion`, progress.progressPercentage);
-            }
+        if (field.options && field.options.length > 0) {
+          report += `   Options: ${field.options.join(', ')}\n`;
+        }
+        report += '\n';
+      });
+    }
+
+    // Features
+    if (data.features && data.features.length > 0) {
+      report += 'FEATURES\n';
+      report += '-'.repeat(40) + '\n';
+      data.features.forEach((feature: any, index: number) => {
+        report += `${index + 1}. ${feature.title}\n`;
+        report += `   Description: ${feature.description}\n`;
+        report += `   Priority: ${feature.priority}\n`;
+        report += `   Status: ${feature.status}\n`;
+        report += `   Type: ${feature.type}\n`;
+        report += `   Estimated Effort: ${feature.estimatedEffort}\n`;
+        if (feature.acceptanceCriteria && feature.acceptanceCriteria.length > 0) {
+          report += `   Acceptance Criteria:\n`;
+          feature.acceptanceCriteria.forEach((criteria: string, i: number) => {
+            report += `     - ${criteria}\n`;
           });
         }
-      }, 200);
+        if (feature.businessRules && feature.businessRules.length > 0) {
+          report += `   Business Rules:\n`;
+          feature.businessRules.forEach((rule: string, i: number) => {
+            report += `     - ${rule}\n`;
+          });
+        }
+        if (feature.testingNotes) {
+          report += `   Testing Notes: ${feature.testingNotes}\n`;
+        }
+        report += '\n';
+      });
     }
-  }
 
-  // Enhanced Tab Navigation with Announcements
-  switchTabEnhanced(tab: string) {
-    this.activeTab.set(tab);
-    
-    // Track the change for auto-save
-    this.trackChangeEnhanced();
-    
-    // Announce tab change
-    this.a11yService.announce(`Switched to ${tab.replace('-', ' ')} tab`);
-    
-    // Focus first form field in new tab
-    setTimeout(() => {
-      this.a11yService.focusFirstFormField();
-    }, 100);
-  }
-
-  private switchToNextTab() {
-    const tabs = ['basic-info', 'stakeholders', 'what-we-need', 'data-fields', 'features', 'success-criteria'];
-    const currentIndex = tabs.indexOf(this.activeTab());
-    const nextIndex = (currentIndex + 1) % tabs.length;
-    this.switchTabEnhanced(tabs[nextIndex]);
-  }
-
-  private switchToPreviousTab() {
-    const tabs = ['basic-info', 'stakeholders', 'what-we-need', 'data-fields', 'features', 'success-criteria'];
-    const currentIndex = tabs.indexOf(this.activeTab());
-    const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
-    this.switchTabEnhanced(tabs[prevIndex]);
-  }
-
-  // Helper Methods for Keyboard Shortcuts
-  private focusSearchField() {
-    this.a11yService.focusElement('#search-input');
-  }
-
-  showKeyboardHelp() {
-    const shortcuts = this.keyboardService.getShortcutHelp();
-    alert(`Keyboard Shortcuts:\n\n${shortcuts}`);
-  }
-
-  private undo() {
-    // Implement undo functionality
-    this.a11yService.announce('Undo action performed');
-  }
-
-  private redo() {
-    // Implement redo functionality
-    this.a11yService.announce('Redo action performed');
-  }
-
-  private copySelection() {
-    if (typeof document !== 'undefined') {
-      document.execCommand('copy');
-      this.a11yService.announce('Selection copied');
+    // Success Criteria
+    if (data.successCriteria && data.successCriteria.length > 0) {
+      report += 'SUCCESS CRITERIA\n';
+      report += '-'.repeat(40) + '\n';
+      data.successCriteria.forEach((criteria: any, index: number) => {
+        report += `${index + 1}. ${criteria.title}\n`;
+        report += `   Description: ${criteria.description}\n`;
+        report += `   Metric: ${criteria.metric}\n`;
+        report += `   Target Value: ${criteria.targetValue}\n`;
+        report += `   Measurement Method: ${criteria.measurementMethod}\n`;
+        report += `   Timeframe: ${criteria.timeframe}\n`;
+        report += `   Priority: ${criteria.priority}\n`;
+        report += `   Owner: ${criteria.owner}\n`;
+        report += `   Status: ${criteria.status}\n\n`;
+      });
     }
-  }
 
-  private pasteSelection() {
-    if (typeof document !== 'undefined') {
-      document.execCommand('paste');
-      this.a11yService.announce('Content pasted');
+    // Summary Statistics
+    if (data.summary) {
+      report += 'PROJECT SUMMARY\n';
+      report += '-'.repeat(40) + '\n';
+      report += `Total Requirements: ${data.summary.totalRequirements}\n`;
+      report += `High Priority Items: ${data.summary.highPriority}\n`;
+      report += `Functional Requirements: ${data.summary.functional}\n`;
+      report += `Non-Functional Requirements: ${data.summary.nonFunctional}\n`;
+      report += `Completion Percentage: ${data.summary.completion}%\n\n`;
     }
-  }
 
-  private selectAllText() {
-    if (typeof document !== 'undefined') {
-      document.execCommand('selectAll');
-      this.a11yService.announce('All text selected');
-    }
-  }
+    report += '='.repeat(60) + '\n';
+    report += `Generated on: ${new Date().toLocaleString()}\n`;
+    report += '='.repeat(60);
 
-  private findInProject() {
-    // Implement find functionality
-    this.a11yService.announce('Find dialog opened');
-  }
-
-  private togglePreviewMode() {
-    // Implement preview mode toggle
-    this.a11yService.announce('Preview mode toggled');
-  }
-
-  // Enhanced Change Tracking with Announcements
-  trackChangeEnhanced() {
-    // Calculate progress after change
-    const progress = this.progressService.calculateProgress({
-      project: this.project(),
-      stakeholders: this.stakeholders(),
-      whatWeNeed: this.whatWeNeed(),
-      dataFields: this.dataFields(),
-      features: this.features(),
-      successCriteria: this.successCriteria()
-    });
-
-    // Announce progress updates (throttled)
-    this.announceProgressChange(progress);
-  }
-
-  private announceProgressChange = this.throttle((progress: ProgressMetrics) => {
-    // Announce overall progress for current section
-    this.a11yService.announceProgress('Current section', progress.progressPercentage);
-  }, 2000);
-
-  private throttle(func: Function, delay: number) {
-    let timeoutId: any;
-    let lastArgs: any;
-    
-    return (...args: any[]) => {
-      lastArgs = args;
-      
-      if (!timeoutId) {
-        timeoutId = setTimeout(() => {
-          func.apply(this, lastArgs);
-          timeoutId = null;
-        }, delay);
-      }
-    };
+    return report;
   }
 }
