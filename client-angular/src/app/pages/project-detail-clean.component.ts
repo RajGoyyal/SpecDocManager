@@ -1135,6 +1135,87 @@ interface SuccessCriteria {
           </div>
         </div>
 
+        <!-- User Stories Tab with Integrated Header -->
+        <div *ngSwitchCase="'user-stories'" class="unified-tab">
+          <div class="tab-header">
+            <h1 class="main-title">User Stories</h1>
+            <p class="main-subtitle">Define user stories and scenarios</p>
+          </div>
+          <div class="tab-content">
+            <div class="content-section">
+              <h3 class="subsection-title">📖 User Stories</h3>
+              <div class="form-grid">
+                <div class="form-group span-full">
+                  <label class="form-label">User Stories</label>
+                  <textarea class="form-control" rows="6" 
+                            placeholder="As a [user type], I want [functionality] so that [benefit]&#10;&#10;Example:&#10;As a project manager, I want to track feature progress so that I can provide accurate status updates to stakeholders.&#10;&#10;As an end user, I want to easily navigate the interface so that I can complete tasks efficiently."></textarea>
+                </div>
+                <div class="form-group span-full">
+                  <label class="form-label">User Scenarios</label>
+                  <textarea class="form-control" rows="6" 
+                            placeholder="Describe typical user scenarios and workflows:&#10;&#10;1. Primary User Scenario: [Describe the main user flow]&#10;2. Alternative Scenarios: [Describe alternative paths]&#10;3. Edge Cases: [Describe unusual but possible scenarios]"></textarea>
+                </div>
+                <div class="form-group span-full">
+                  <label class="form-label">User Journey Mapping</label>
+                  <textarea class="form-control" rows="4" 
+                            placeholder="Map the user journey from start to finish:&#10;&#10;1. User Entry Point → 2. Key Actions → 3. Decision Points → 4. End Goal"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workflows Tab with Integrated Header -->
+        <div *ngSwitchCase="'workflows'" class="unified-tab">
+          <div class="tab-header">
+            <h1 class="main-title">Workflows</h1>
+            <p class="main-subtitle">Define processes and workflow steps</p>
+          </div>
+          <div class="tab-content">
+            <div class="content-section">
+              <h3 class="subsection-title">⚙️ Process Workflows</h3>
+              <div class="form-grid">
+                <div class="form-group span-full">
+                  <label class="form-label">Primary Workflows</label>
+                  <textarea class="form-control" rows="6" 
+                            placeholder="Define the main workflows and processes:&#10;&#10;Workflow 1: [Name]&#10;Steps: 1. Start → 2. Process → 3. Review → 4. Complete&#10;&#10;Workflow 2: [Name]&#10;Steps: 1. Input → 2. Validation → 3. Processing → 4. Output"></textarea>
+                </div>
+                <div class="form-group span-full">
+                  <label class="form-label">Business Process Rules</label>
+                  <textarea class="form-control" rows="4" 
+                            placeholder="Define business rules that govern the workflows:&#10;&#10;• Rule 1: [Condition] → [Action]&#10;• Rule 2: [Trigger] → [Response]&#10;• Rule 3: [Validation] → [Outcome]"></textarea>
+                </div>
+                <div class="form-group span-full">
+                  <label class="form-label">Integration Points</label>
+                  <textarea class="form-control" rows="4" 
+                            placeholder="Describe integration points with other systems:&#10;&#10;• External System 1: [Description of integration]&#10;• API Endpoints: [List key APIs]&#10;• Data Flow: [How data moves between systems]"></textarea>
+                </div>
+                <div class="form-group span-full">
+                  <label class="form-label">Error Handling & Exceptions</label>
+                  <textarea class="form-control" rows="4" 
+                            placeholder="Define how errors and exceptions are handled:&#10;&#10;• Error Type 1: [How to handle]&#10;• Fallback Procedures: [What happens when systems fail]&#10;• Recovery Steps: [How to restore normal operation]"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Default Case for Unknown Tabs -->
+        <div *ngSwitchDefault class="unified-tab">
+          <div class="tab-header">
+            <h1 class="main-title">Tab Not Found</h1>
+            <p class="main-subtitle">The requested tab could not be found</p>
+          </div>
+          <div class="tab-content">
+            <div class="content-section">
+              <div class="empty-state">
+                <p>The tab you're looking for doesn't exist or is under development.</p>
+                <p>Please select a different tab from the navigation menu.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   `,
