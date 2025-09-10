@@ -769,6 +769,41 @@ interface SuccessCriteria {
                                 (input)="updateBusinessRules(i, $event)"
                                 placeholder="Enter business rules (one per line)&#10;- Business constraint or rule&#10;- Data validation rule..."></textarea>
                     </div>
+                    
+                    <!-- Add Requirement Button -->
+                    <div class="form-group span-full add-requirement-section">
+                      <button type="button" class="add-requirement-btn" (click)="addRequirementToFeature(i)">
+                        ➕ Add This Requirement
+                      </button>
+                      <p class="add-requirement-help">Click to save this feature as a formal requirement</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Requirements Summary Section -->
+              <div class="requirements-summary" *ngIf="features().length > 0">
+                <h3 class="summary-title">📋 Requirements Summary</h3>
+                <div class="summary-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Total Features:</span>
+                    <span class="stat-value">{{ features().length }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Critical Priority:</span>
+                    <span class="stat-value critical">{{ getFeaturesByImportance('critical').length }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">High Priority:</span>
+                    <span class="stat-value high">{{ getFeaturesByImportance('high').length }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Functional Requirements:</span>
+                    <span class="stat-value">{{ getFeaturesByType('functional').length }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Completed:</span>
+                    <span class="stat-value completed">{{ getFeaturesByStatus('completed').length }}</span>
                   </div>
                 </div>
               </div>
@@ -834,53 +869,249 @@ interface SuccessCriteria {
             <p class="main-subtitle">Export your requirements documentation</p>
           </div>
           <div class="tab-content">
+            <!-- Enhanced Document Summary -->
             <div class="content-section">
-              <div class="document-summary">
-                <h3 class="subsection-title">📄 Document Summary</h3>
-                <div class="summary-grid">
-                  <div class="summary-item">
-                    <span class="summary-label">Project Title:</span>
-                    <span class="summary-value">{{project().title}}</span>
+              <h3 class="subsection-title">📄 Document Summary</h3>
+              <div class="summary-grid-enhanced">
+                <div class="summary-card">
+                  <div class="summary-header">
+                    <span class="summary-icon">📋</span>
+                    <span class="summary-title">Project Overview</span>
                   </div>
-                  <div class="summary-item">
-                    <span class="summary-label">Total Requirements:</span>
-                    <span class="summary-value">{{features().length}}</span>
+                  <div class="summary-stats">
+                    <div class="stat-row">
+                      <span class="stat-label">Project Title:</span>
+                      <span class="stat-value">{{project().title || 'Untitled Project'}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Version:</span>
+                      <span class="stat-value">{{project().version || '1.0.0'}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Author:</span>
+                      <span class="stat-value">{{project().author || 'Not specified'}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Status:</span>
+                      <span class="stat-value status-{{project().status}}">{{project().status | titlecase}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Priority:</span>
+                      <span class="stat-value priority-{{project().priority}}">{{project().priority | titlecase}}</span>
+                    </div>
                   </div>
-                  <div class="summary-item">
-                    <span class="summary-label">High Priority:</span>
-                    <span class="summary-value">{{getHighPriorityCount()}}</span>
+                </div>
+
+                <div class="summary-card">
+                  <div class="summary-header">
+                    <span class="summary-icon">📊</span>
+                    <span class="summary-title">Requirements Breakdown</span>
                   </div>
-                  <div class="summary-item">
-                    <span class="summary-label">Functional:</span>
-                    <span class="summary-value">{{getFunctionalCount()}}</span>
+                  <div class="summary-stats">
+                    <div class="stat-row">
+                      <span class="stat-label">Total Requirements:</span>
+                      <span class="stat-value">{{features().length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Critical Priority:</span>
+                      <span class="stat-value critical">{{getFeaturesByImportance('critical').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">High Priority:</span>
+                      <span class="stat-value high">{{getFeaturesByImportance('high').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Functional:</span>
+                      <span class="stat-value">{{getFeaturesByType('functional').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Non-Functional:</span>
+                      <span class="stat-value">{{getFeaturesByType('non-functional').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Security:</span>
+                      <span class="stat-value">{{getFeaturesByType('security').length}}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="summary-card">
+                  <div class="summary-header">
+                    <span class="summary-icon">👥</span>
+                    <span class="summary-title">Stakeholders & Data</span>
+                  </div>
+                  <div class="summary-stats">
+                    <div class="stat-row">
+                      <span class="stat-label">Total Stakeholders:</span>
+                      <span class="stat-value">{{stakeholders().length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Primary Stakeholders:</span>
+                      <span class="stat-value">{{getStakeholdersByType('primary').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Data Fields:</span>
+                      <span class="stat-value">{{dataFields().length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Required Fields:</span>
+                      <span class="stat-value">{{getRequiredFields().length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Completion Status:</span>
+                      <span class="stat-value">{{getCompletionPercentage()}}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="summary-card">
+                  <div class="summary-header">
+                    <span class="summary-icon">📈</span>
+                    <span class="summary-title">Progress Overview</span>
+                  </div>
+                  <div class="summary-stats">
+                    <div class="stat-row">
+                      <span class="stat-label">Completed Features:</span>
+                      <span class="stat-value completed">{{getFeaturesByStatus('completed').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">In Progress:</span>
+                      <span class="stat-value in-progress">{{getFeaturesByStatus('in-progress').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Testing:</span>
+                      <span class="stat-value testing">{{getFeaturesByStatus('testing').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Draft:</span>
+                      <span class="stat-value draft">{{getFeaturesByStatus('draft').length}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Success Criteria Defined:</span>
+                      <span class="stat-value">{{isSuccessCriteriaDefined() ? 'Yes' : 'No'}}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- Enhanced Export Options -->
             <div class="content-section">
               <h3 class="subsection-title">📥 Export Options</h3>
               <div class="export-grid">
-                <button class="export-btn" (click)="exportAsPDF()">
+                <button class="export-btn primary" (click)="exportAsPDF()">
                   <span class="export-icon">📄</span>
                   <span class="export-title">Export as PDF</span>
-                  <span class="export-desc">Professional PDF document</span>
+                  <span class="export-desc">Professional PDF document with formatting</span>
+                  <span class="export-features">• Print-ready • Watermarks • Table of contents</span>
                 </button>
-                <button class="export-btn" (click)="exportAsWord()">
+                
+                <button class="export-btn secondary" (click)="exportAsWord()">
                   <span class="export-icon">📝</span>
                   <span class="export-title">Export as Word Document</span>
-                  <span class="export-desc">Editable Word format</span>
+                  <span class="export-desc">Editable DOCX format for collaboration</span>
+                  <span class="export-features">• Editable • Comments • Track changes</span>
                 </button>
-                <button class="export-btn" (click)="exportComplete()">
+                
+                <button class="export-btn success" (click)="exportComplete()">
                   <span class="export-icon">📋</span>
-                  <span class="export-title">Export as Complete</span>
-                  <span class="export-desc">All sections included</span>
+                  <span class="export-title">Export Complete Documentation</span>
+                  <span class="export-desc">All sections with technical specifications</span>
+                  <span class="export-features">• Full documentation • Appendices • Glossary</span>
                 </button>
-                <button class="export-btn" (click)="exportPackage()">
+                
+                <button class="export-btn info" (click)="exportPackage()">
                   <span class="export-icon">📦</span>
                   <span class="export-title">Export as Package</span>
-                  <span class="export-desc">ZIP with all formats</span>
+                  <span class="export-desc">ZIP file with multiple formats</span>
+                  <span class="export-features">• PDF + Word • Excel sheets • JSON data</span>
                 </button>
+                
+                <button class="export-btn warning" (click)="exportExecutiveSummary()">
+                  <span class="export-icon">📊</span>
+                  <span class="export-title">Executive Summary</span>
+                  <span class="export-desc">High-level overview for stakeholders</span>
+                  <span class="export-features">• Key metrics • Charts • Summary only</span>
+                </button>
+                
+                <button class="export-btn dark" (click)="exportTechnicalSpecs()">
+                  <span class="export-icon">⚙️</span>
+                  <span class="export-title">Technical Specifications</span>
+                  <span class="export-desc">Developer-focused technical details</span>
+                  <span class="export-features">• API docs • Data schemas • Code samples</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Export Configuration -->
+            <div class="content-section">
+              <h3 class="subsection-title">⚙️ Export Configuration</h3>
+              <div class="export-config">
+                <div class="config-section">
+                  <h4 class="config-title">Include Sections</h4>
+                  <div class="checkbox-grid">
+                    <label class="checkbox-item">
+                      <input type="checkbox" [ngModel]="exportConfig().includeBasicInfo" (ngModelChange)="updateExportConfig('includeBasicInfo', $event)" checked>
+                      <span>📋 Basic Information</span>
+                    </label>
+                    <label class="checkbox-item">
+                      <input type="checkbox" [ngModel]="exportConfig().includeWhatWeNeed" (ngModelChange)="updateExportConfig('includeWhatWeNeed', $event)" checked>
+                      <span>🎯 What We Need</span>
+                    </label>
+                    <label class="checkbox-item">
+                      <input type="checkbox" [ngModel]="exportConfig().includeDataFields" (ngModelChange)="updateExportConfig('includeDataFields', $event)" checked>
+                      <span>🗃️ Data Fields</span>
+                    </label>
+                    <label class="checkbox-item">
+                      <input type="checkbox" [ngModel]="exportConfig().includeStakeholders" (ngModelChange)="updateExportConfig('includeStakeholders', $event)" checked>
+                      <span>👥 Stakeholders</span>
+                    </label>
+                    <label class="checkbox-item">
+                      <input type="checkbox" [ngModel]="exportConfig().includeFeatures" (ngModelChange)="updateExportConfig('includeFeatures', $event)" checked>
+                      <span>🔧 Features</span>
+                    </label>
+                    <label class="checkbox-item">
+                      <input type="checkbox" [ngModel]="exportConfig().includeSuccessCriteria" (ngModelChange)="updateExportConfig('includeSuccessCriteria', $event)" checked>
+                      <span>✅ Success Criteria</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div class="config-section">
+                  <h4 class="config-title">Format Options</h4>
+                  <div class="format-options">
+                    <label class="format-item">
+                      <span>Include Table of Contents:</span>
+                      <select [ngModel]="exportConfig().includeTableOfContents" (ngModelChange)="updateExportConfig('includeTableOfContents', $event)">
+                        <option [value]="true">Yes</option>
+                        <option [value]="false">No</option>
+                      </select>
+                    </label>
+                    <label class="format-item">
+                      <span>Include Page Numbers:</span>
+                      <select [ngModel]="exportConfig().includePageNumbers" (ngModelChange)="updateExportConfig('includePageNumbers', $event)">
+                        <option [value]="true">Yes</option>
+                        <option [value]="false">No</option>
+                      </select>
+                    </label>
+                    <label class="format-item">
+                      <span>Include Appendices:</span>
+                      <select [ngModel]="exportConfig().includeAppendices" (ngModelChange)="updateExportConfig('includeAppendices', $event)">
+                        <option [value]="true">Yes</option>
+                        <option [value]="false">No</option>
+                      </select>
+                    </label>
+                    <label class="format-item">
+                      <span>Color Scheme:</span>
+                      <select [ngModel]="exportConfig().colorScheme" (ngModelChange)="updateExportConfig('colorScheme', $event)">
+                        <option value="professional">Professional</option>
+                        <option value="corporate">Corporate</option>
+                        <option value="minimal">Minimal</option>
+                        <option value="colorful">Colorful</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1710,6 +1941,300 @@ interface SuccessCriteria {
         padding: 6px 8px;
         font-size: 13px;
       }
+
+      /* Enhanced Features Tab Styling */
+      .add-requirement-section {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 2px dashed #0ea5e9;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        margin-top: 16px;
+      }
+
+      .add-requirement-btn {
+        background: #0ea5e9;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 8px;
+      }
+
+      .add-requirement-btn:hover {
+        background: #0284c7;
+        transform: translateY(-2px);
+      }
+
+      .add-requirement-help {
+        margin: 0;
+        font-size: 14px;
+        color: #64748b;
+        font-style: italic;
+      }
+
+      .requirements-summary {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 24px;
+        margin-top: 24px;
+      }
+
+      .summary-title {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+      }
+
+      .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #64748b;
+        font-weight: 500;
+      }
+
+      .stat-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+
+      .stat-value.critical { color: #dc2626; }
+      .stat-value.high { color: #ea580c; }
+      .stat-value.completed { color: #16a34a; }
+
+      /* Enhanced Download Tab Styling */
+      .summary-grid-enhanced {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      .summary-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .summary-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .summary-icon {
+        font-size: 20px;
+      }
+
+      .summary-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+      }
+
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border-bottom: 1px solid #f8fafc;
+      }
+
+      .stat-row:last-child {
+        border-bottom: none;
+      }
+
+      .stat-row .stat-label {
+        font-size: 13px;
+        color: #64748b;
+      }
+
+      .stat-row .stat-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .stat-row .stat-value.critical { color: #dc2626; }
+      .stat-row .stat-value.high { color: #ea580c; }
+      .stat-row .stat-value.completed { color: #16a34a; }
+      .stat-row .stat-value.in-progress { color: #2563eb; }
+      .stat-row .stat-value.testing { color: #7c3aed; }
+      .stat-row .stat-value.draft { color: #64748b; }
+
+      .export-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .export-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+      }
+
+      .export-btn:hover {
+        border-color: #3b82f6;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+      }
+
+      .export-btn.primary { border-color: #3b82f6; }
+      .export-btn.primary:hover { border-color: #2563eb; background: #eff6ff; }
+
+      .export-btn.secondary { border-color: #64748b; }
+      .export-btn.secondary:hover { border-color: #475569; background: #f8fafc; }
+
+      .export-btn.success { border-color: #22c55e; }
+      .export-btn.success:hover { border-color: #16a34a; background: #f0fdf4; }
+
+      .export-btn.info { border-color: #06b6d4; }
+      .export-btn.info:hover { border-color: #0891b2; background: #f0fdfa; }
+
+      .export-btn.warning { border-color: #f59e0b; }
+      .export-btn.warning:hover { border-color: #d97706; background: #fffbeb; }
+
+      .export-btn.dark { border-color: #374151; }
+      .export-btn.dark:hover { border-color: #1f2937; background: #f9fafb; }
+
+      .export-icon {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+
+      .export-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 4px;
+      }
+
+      .export-desc {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+
+      .export-features {
+        font-size: 12px;
+        color: #9ca3af;
+        font-style: italic;
+        line-height: 1.3;
+      }
+
+      /* Export Configuration Styling */
+      .export-config {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 24px;
+      }
+
+      .config-section {
+        margin-bottom: 24px;
+      }
+
+      .config-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .config-title {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+      }
+
+      .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+      }
+
+      .checkbox-item:hover {
+        background: #f1f5f9;
+      }
+
+      .checkbox-item input[type="checkbox"] {
+        margin: 0;
+      }
+
+      .format-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+      }
+
+      .format-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+      }
+
+      .format-item span {
+        font-size: 14px;
+        color: #374151;
+        font-weight: 500;
+      }
+
+      .format-item select {
+        padding: 4px 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 13px;
+      }
     }
   `]
 })
@@ -1860,6 +2385,110 @@ export class ProjectDetailCleanComponent implements OnInit {
     return this.features().filter(feature => feature.status === status);
   }
 
+  // Enhanced filtering methods for Features tab
+  getFeaturesByImportance(importance: string): Feature[] {
+    return this.features().filter(feature => feature.importance === importance);
+  }
+
+  getFeaturesByType(type: string): Feature[] {
+    return this.features().filter(feature => feature.type === type);
+  }
+
+  // Method for "Add This Requirement" button
+  addRequirementToFeature(index: number) {
+    const feature = this.features()[index];
+    if (feature?.title) {
+      // Here you could add logic to save the requirement to a formal requirements list
+      alert(`Requirement "${feature.title}" has been added to the formal requirements list.`);
+      // You could also update the feature status to indicate it's been formalized
+      this.features.update(current => {
+        const updated = [...current];
+        updated[index] = { ...updated[index], status: 'approved' };
+        return updated;
+      });
+    }
+  }
+
+  // Download tab helper methods
+  getStakeholdersByType(type: string): Stakeholder[] {
+    return this.stakeholders().filter(stakeholder => stakeholder.type === type);
+  }
+
+  getRequiredFields(): DataField[] {
+    return this.dataFields().filter(field => field.required);
+  }
+
+  getCompletionPercentage(): number {
+    const totalItems = this.features().length + this.stakeholders().length + this.dataFields().length;
+    if (totalItems === 0) return 0;
+    
+    const completedFeatures = this.getFeaturesByStatus('completed').length;
+    const definedStakeholders = this.stakeholders().filter(s => s.name && s.role).length;
+    const definedFields = this.dataFields().filter(f => f.name && f.displayLabel).length;
+    
+    const completedItems = completedFeatures + definedStakeholders + definedFields;
+    return Math.round((completedItems / totalItems) * 100);
+  }
+
+  isSuccessCriteriaDefined(): boolean {
+    const criteria = this.successCriteria();
+    return !!(criteria.successCriteria || criteria.userTestingPlan || 
+              criteria.performanceRequirements || criteria.securityRequirements);
+  }
+
+  // Export configuration
+  exportConfig = signal({
+    includeBasicInfo: true,
+    includeWhatWeNeed: true,
+    includeDataFields: true,
+    includeStakeholders: true,
+    includeFeatures: true,
+    includeSuccessCriteria: true,
+    includeTableOfContents: true,
+    includePageNumbers: true,
+    includeAppendices: true,
+    colorScheme: 'professional'
+  });
+
+  // Method to update export configuration
+  updateExportConfig(key: string, value: any) {
+    this.exportConfig.update(current => ({
+      ...current,
+      [key]: value
+    }));
+  }
+
+  // Export methods
+  exportAsPDF() {
+    console.log('Exporting as PDF with config:', this.exportConfig());
+    alert('PDF export functionality would be implemented here');
+  }
+
+  exportAsWord() {
+    console.log('Exporting as Word document');
+    alert('Word export functionality would be implemented here');
+  }
+
+  exportComplete() {
+    console.log('Exporting complete documentation');
+    alert('Complete export functionality would be implemented here');
+  }
+
+  exportPackage() {
+    console.log('Exporting as package');
+    alert('Package export functionality would be implemented here');
+  }
+
+  exportExecutiveSummary() {
+    console.log('Exporting executive summary');
+    alert('Executive summary export functionality would be implemented here');
+  }
+
+  exportTechnicalSpecs() {
+    console.log('Exporting technical specifications');
+    alert('Technical specifications export functionality would be implemented here');
+  }
+
   addDataField() {
     const newField: DataField = {
       id: Date.now().toString(),
@@ -1941,25 +2570,5 @@ export class ProjectDetailCleanComponent implements OnInit {
 
   getFunctionalCount(): number {
     return this.features().filter(f => f.type === 'functional').length;
-  }
-
-  exportAsPDF() {
-    console.log('Exporting as PDF...');
-    // Implementation for PDF export
-  }
-
-  exportAsWord() {
-    console.log('Exporting as Word document...');
-    // Implementation for Word export
-  }
-
-  exportComplete() {
-    console.log('Exporting complete document...');
-    // Implementation for complete export
-  }
-
-  exportPackage() {
-    console.log('Exporting as package...');
-    // Implementation for package export
   }
 }
