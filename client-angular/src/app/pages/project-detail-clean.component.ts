@@ -45,13 +45,32 @@ interface DataField {
   id: string;
   name: string;
   displayLabel: string;
-  uiControl: 'text' | 'textarea' | 'number' | 'email' | 'password' | 'date' | 'datetime' | 'select' | 'multiselect' | 'radio' | 'checkbox' | 'toggle' | 'slider' | 'file' | 'color' | 'url' | 'search';
+  uiControl: 'text' | 'textarea' | 'number' | 'email' | 'password' | 'date' | 'datetime' | 'select' | 'multiselect' | 'radio' | 'checkbox' | 'toggle' | 'slider' | 'file' | 'color' | 'url' | 'search' | 'rating' | 'tags' | 'rich-text';
   dataType: 'string' | 'number' | 'integer' | 'decimal' | 'boolean' | 'date' | 'datetime' | 'email' | 'url' | 'json' | 'array' | 'file';
   placeholderText: string;
   defaultValue: string;
   maxLength?: number;
   required: boolean;
   validationRules: string;
+  description: string;
+  dropdownOptions: DropdownOption[];
+  securityLevel: 'public' | 'internal' | 'confidential' | 'restricted';
+  visibility: 'always' | 'conditional' | 'admin-only' | 'hidden';
+  trackAnalytics: boolean;
+  autoUpdate: boolean;
+  mobileOptimized: boolean;
+  internationalization: boolean;
+  conditionalLogic: string;
+  dataDependencies: string;
+  cssClasses: string;
+  helpText: string;
+  customErrorMessage: string;
+  apiEndpoint: string;
+}
+
+interface DropdownOption {
+  value: string;
+  display: string;
   description: string;
 }
 
@@ -361,24 +380,27 @@ interface SuccessCriteria {
                     </div>
                     <div class="form-group">
                       <label class="form-label">UI Control</label>
-                      <select class="form-control" [(ngModel)]="field.uiControl">
-                        <option value="text">Text Input</option>
-                        <option value="textarea">Text Area</option>
-                        <option value="number">Number Input</option>
-                        <option value="email">Email Input</option>
-                        <option value="password">Password Input</option>
-                        <option value="date">Date Picker</option>
-                        <option value="datetime">Date Time Picker</option>
-                        <option value="select">Select Dropdown</option>
-                        <option value="multiselect">Multi Select</option>
-                        <option value="radio">Radio Buttons</option>
-                        <option value="checkbox">Checkbox</option>
-                        <option value="toggle">Toggle Switch</option>
-                        <option value="slider">Slider</option>
-                        <option value="file">File Upload</option>
-                        <option value="color">Color Picker</option>
-                        <option value="url">URL Input</option>
-                        <option value="search">Search Input</option>
+                      <select class="form-control" [(ngModel)]="field.uiControl" (change)="onUiControlChange(field, i)">
+                        <option value="text">📝 Text Input</option>
+                        <option value="textarea">📄 Text Area</option>
+                        <option value="number">🔢 Number Input</option>
+                        <option value="email">📧 Email Input</option>
+                        <option value="password">🔒 Password Input</option>
+                        <option value="date">📅 Date Picker</option>
+                        <option value="datetime">🕐 Date Time Picker</option>
+                        <option value="select">📋 Select Dropdown</option>
+                        <option value="multiselect">☑️ Multi Select</option>
+                        <option value="radio">🔘 Radio Buttons</option>
+                        <option value="checkbox">✅ Checkbox</option>
+                        <option value="toggle">🔄 Toggle Switch</option>
+                        <option value="slider">🎚️ Slider</option>
+                        <option value="file">📎 File Upload</option>
+                        <option value="color">🎨 Color Picker</option>
+                        <option value="url">🌐 URL Input</option>
+                        <option value="search">🔍 Search Input</option>
+                        <option value="rating">⭐ Rating</option>
+                        <option value="tags">🏷️ Tags Input</option>
+                        <option value="rich-text">📝 Rich Text Editor</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -428,6 +450,152 @@ interface SuccessCriteria {
                       <textarea class="form-control" rows="2" 
                                 [(ngModel)]="field.validationRules" 
                                 placeholder="Describe validation rules and constraints"></textarea>
+                    </div>
+                    
+                    <!-- Dropdown Options Section - Shows when select, multiselect, or radio is selected -->
+                    <div *ngIf="field.uiControl === 'select' || field.uiControl === 'multiselect' || field.uiControl === 'radio'" 
+                         class="form-group span-full dropdown-options-section">
+                      <div class="options-header">
+                        <label class="form-label">Dropdown Options</label>
+                        <button type="button" class="add-option-btn" (click)="addDropdownOption(field, i)">+ Add Option</button>
+                      </div>
+                      
+                      <div class="options-list">
+                        <div *ngFor="let option of field.dropdownOptions; let optIndex = index" class="option-item">
+                          <div class="option-content">
+                            <div class="option-input-group">
+                              <label class="option-label">Value:</label>
+                              <input type="text" class="option-input" 
+                                     [(ngModel)]="option.value" 
+                                     placeholder="option_value">
+                            </div>
+                            <div class="option-input-group">
+                              <label class="option-label">Display:</label>
+                              <input type="text" class="option-input" 
+                                     [(ngModel)]="option.display" 
+                                     placeholder="Display Text">
+                            </div>
+                            <div class="option-input-group">
+                              <label class="option-label">Description:</label>
+                              <input type="text" class="option-input" 
+                                     [(ngModel)]="option.description" 
+                                     placeholder="Optional description">
+                            </div>
+                            <button type="button" class="remove-option-btn" 
+                                    (click)="removeDropdownOption(field, optIndex)">×</button>
+                          </div>
+                        </div>
+                        
+                        <div *ngIf="field.dropdownOptions.length === 0" class="no-options">
+                          <p>No options added yet. Click "Add Option" to get started.</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Enhanced Field Properties -->
+                    <div class="form-group span-full field-properties">
+                      <h4 class="property-section-title">📋 Field Properties</h4>
+                      <div class="property-grid">
+                        <div class="property-item">
+                          <label class="property-label">🔒 Security Level</label>
+                          <select class="form-control small" [(ngModel)]="field.securityLevel">
+                            <option value="public">Public</option>
+                            <option value="internal">Internal</option>
+                            <option value="confidential">Confidential</option>
+                            <option value="restricted">Restricted</option>
+                          </select>
+                        </div>
+                        
+                        <div class="property-item">
+                          <label class="property-label">👁️ Visibility</label>
+                          <select class="form-control small" [(ngModel)]="field.visibility">
+                            <option value="always">Always Visible</option>
+                            <option value="conditional">Conditional</option>
+                            <option value="admin-only">Admin Only</option>
+                            <option value="hidden">Hidden</option>
+                          </select>
+                        </div>
+                        
+                        <div class="property-item">
+                          <label class="property-label">📊 Analytics</label>
+                          <select class="form-control small" [(ngModel)]="field.trackAnalytics">
+                            <option [value]="true">Track Usage</option>
+                            <option [value]="false">No Tracking</option>
+                          </select>
+                        </div>
+                        
+                        <div class="property-item">
+                          <label class="property-label">🔄 Auto-Update</label>
+                          <select class="form-control small" [(ngModel)]="field.autoUpdate">
+                            <option [value]="false">Manual</option>
+                            <option [value]="true">Auto-Update</option>
+                          </select>
+                        </div>
+                        
+                        <div class="property-item">
+                          <label class="property-label">📱 Mobile Optimized</label>
+                          <select class="form-control small" [(ngModel)]="field.mobileOptimized">
+                            <option [value]="true">Yes</option>
+                            <option [value]="false">No</option>
+                          </select>
+                        </div>
+                        
+                        <div class="property-item">
+                          <label class="property-label">🌍 Internationalization</label>
+                          <select class="form-control small" [(ngModel)]="field.internationalization">
+                            <option [value]="true">Multi-language</option>
+                            <option [value]="false">Single Language</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Field Behavior Settings -->
+                    <div class="form-group span-full field-behavior">
+                      <h4 class="property-section-title">⚙️ Field Behavior</h4>
+                      <div class="behavior-grid">
+                        <div class="form-group">
+                          <label class="form-label">Conditional Logic</label>
+                          <textarea class="form-control" rows="2" 
+                                    [(ngModel)]="field.conditionalLogic" 
+                                    placeholder="Show when: field_name = 'value'&#10;Hide when: other_field is empty"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label">Data Dependencies</label>
+                          <textarea class="form-control" rows="2" 
+                                    [(ngModel)]="field.dataDependencies" 
+                                    placeholder="Depends on: user_role, account_type&#10;Updates: related_field_1, related_field_2"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label">Custom CSS Classes</label>
+                          <input type="text" class="form-control" 
+                                 [(ngModel)]="field.cssClasses" 
+                                 placeholder="custom-class-1 highlight-field">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label">Help Text</label>
+                          <input type="text" class="form-control" 
+                                 [(ngModel)]="field.helpText" 
+                                 placeholder="Helpful information for users">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label">Error Message</label>
+                          <input type="text" class="form-control" 
+                                 [(ngModel)]="field.customErrorMessage" 
+                                 placeholder="Custom validation error message">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label">API Endpoint</label>
+                          <input type="text" class="form-control" 
+                                 [(ngModel)]="field.apiEndpoint" 
+                                 placeholder="/api/validate/field-name">
+                        </div>
+                      </div>
                     </div>
                     <div class="form-group span-full">
                       <label class="form-label">Field Description</label>
@@ -1386,6 +1554,162 @@ interface SuccessCriteria {
         margin: 0;
         font-size: 16px;
       }
+
+      /* Enhanced Data Fields Styling */
+      .dropdown-options-section {
+        background: #f8fafc;
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 16px;
+      }
+
+      .options-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .add-option-btn {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .add-option-btn:hover {
+        background: #2563eb;
+      }
+
+      .options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .option-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 16px;
+        position: relative;
+      }
+
+      .option-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr auto;
+        gap: 12px;
+        align-items: end;
+      }
+
+      .option-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .option-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #64748b;
+      }
+
+      .option-input {
+        padding: 6px 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .remove-option-btn {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 6px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        height: fit-content;
+      }
+
+      .remove-option-btn:hover {
+        background: #dc2626;
+      }
+
+      .no-options {
+        text-align: center;
+        padding: 20px;
+        color: #64748b;
+        font-style: italic;
+      }
+
+      .no-options p {
+        margin: 0;
+      }
+
+      /* Field Properties Styling */
+      .field-properties {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 1px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 16px;
+      }
+
+      .field-behavior {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 1px solid #22c55e;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 16px;
+      }
+
+      .property-section-title {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .property-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+      }
+
+      .property-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .property-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .behavior-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+      }
+
+      .form-control.small {
+        padding: 6px 8px;
+        font-size: 13px;
+      }
     }
   `]
 })
@@ -1548,13 +1872,49 @@ export class ProjectDetailCleanComponent implements OnInit {
       maxLength: undefined,
       required: false,
       validationRules: '',
-      description: ''
+      description: '',
+      dropdownOptions: [],
+      securityLevel: 'public',
+      visibility: 'always',
+      trackAnalytics: false,
+      autoUpdate: false,
+      mobileOptimized: true,
+      internationalization: false,
+      conditionalLogic: '',
+      dataDependencies: '',
+      cssClasses: '',
+      helpText: '',
+      customErrorMessage: '',
+      apiEndpoint: ''
     };
     this.dataFields.update(current => [...current, newField]);
   }
 
   removeDataField(index: number) {
     this.dataFields.update(current => current.filter((_, i) => i !== index));
+  }
+
+  onUiControlChange(field: DataField, index: number) {
+    // Initialize dropdown options if select/multiselect/radio is chosen
+    if ((field.uiControl === 'select' || field.uiControl === 'multiselect' || field.uiControl === 'radio') && 
+        field.dropdownOptions.length === 0) {
+      field.dropdownOptions = [
+        { value: 'option1', display: 'Option 1', description: '' },
+        { value: 'option2', display: 'Option 2', description: '' }
+      ];
+    }
+  }
+
+  addDropdownOption(field: DataField, fieldIndex: number) {
+    field.dropdownOptions.push({
+      value: '',
+      display: '',
+      description: ''
+    });
+  }
+
+  removeDropdownOption(field: DataField, optionIndex: number) {
+    field.dropdownOptions.splice(optionIndex, 1);
   }
 
   updateAcceptanceCriteria(index: number, event: any) {
