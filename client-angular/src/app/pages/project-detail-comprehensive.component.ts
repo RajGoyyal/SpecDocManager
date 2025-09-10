@@ -24,6 +24,16 @@ interface Stakeholder {
 
 interface WhatWeNeed {
   userExperienceGoals: string;
+  whatsIncluded: string;
+  whatsNotIncluded: string;
+  keyAssumptionsAndDependencies: string;
+  dataStorageNeeds: string;
+  externalServicesIntegrations: string;
+  businessGoals: string;
+  successMetrics: string;
+  timelineExpectations: string;
+  budgetConstraints: string;
+  technicalConstraints: string;
   scopeIncluded: string[];
   scopeExcluded: string[];
   keyAssumptions: string[];
@@ -34,29 +44,33 @@ interface WhatWeNeed {
 
 interface DataField {
   id: string;
-  fieldName: string;
+  name: string;
   displayLabel: string;
-  uiControl: 'input' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'number' | 'email' | 'password';
-  dataType: 'string' | 'number' | 'boolean' | 'date' | 'file' | 'email';
-  placeholder: string;
+  uiControl: 'text' | 'textarea' | 'number' | 'email' | 'password' | 'date' | 'datetime' | 'select' | 'multiselect' | 'radio' | 'checkbox' | 'toggle' | 'slider' | 'file' | 'color' | 'url' | 'search';
+  dataType: 'string' | 'number' | 'integer' | 'decimal' | 'boolean' | 'date' | 'datetime' | 'email' | 'url' | 'json' | 'array' | 'file';
+  placeholderText: string;
   defaultValue: string;
-  maxLength: number;
+  maxLength?: number;
   required: boolean;
-  validationRules: string[];
-  specifications: string;
+  validationRules: string;
+  description: string;
+  options: string[];
+  optionsText: string;
 }
 
 interface Feature {
   id: string;
   title: string;
-  type: 'functional' | 'non-functional';
-  priority: 'high' | 'medium' | 'low';
+  type: 'functional' | 'non-functional' | 'business' | 'integration' | 'security' | 'performance' | 'usability' | 'compliance';
+  priority: 'critical' | 'high' | 'medium' | 'low' | 'nice-to-have';
   description: string;
+  detailedDescription?: string;
   userStory: string;
   acceptanceCriteria: string[];
   businessRules: string[];
   testingNotes: string;
-  status: 'draft' | 'review' | 'approved' | 'implemented';
+  status: 'draft' | 'review' | 'approved' | 'in-progress' | 'testing' | 'completed' | 'rejected';
+  estimatedEffort?: 'xs' | 's' | 'm' | 'l' | 'xl' | 'xxl';
 }
 
 interface SuccessCriteria {
@@ -297,6 +311,172 @@ interface SuccessCriteria {
             </div>
           </div>
 
+          <!-- Data Fields Tab -->
+          <div *ngIf="activeTab() === 'data-fields'" class="tab-content">
+            <div class="section">
+              <div class="section-header">
+                <h3 class="section-title">Data Field Specifications</h3>
+                <button class="btn btn-primary" (click)="addDataField()">
+                  <span class="icon">+</span>
+                  Add Data Field
+                </button>
+              </div>
+              
+              <div class="data-fields-list">
+                <div *ngFor="let field of dataFields(); let i = index" class="data-field-card">
+                  <div class="field-header">
+                    <div class="form-grid">
+                      <div class="form-group">
+                        <label class="form-label">Field Name</label>
+                        <input 
+                          type="text" 
+                          class="form-control"
+                          [(ngModel)]="field.name"
+                          placeholder="e.g., firstName, email, phoneNumber">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Display Label</label>
+                        <input 
+                          type="text" 
+                          class="form-control"
+                          [(ngModel)]="field.displayLabel"
+                          placeholder="e.g., First Name, Email Address">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">UI Control</label>
+                        <select class="form-control" [(ngModel)]="field.uiControl">
+                          <option value="text">Text Input</option>
+                          <option value="textarea">Text Area</option>
+                          <option value="number">Number Input</option>
+                          <option value="email">Email Input</option>
+                          <option value="password">Password Input</option>
+                          <option value="date">Date Picker</option>
+                          <option value="datetime">Date Time Picker</option>
+                          <option value="select">Dropdown Select</option>
+                          <option value="multiselect">Multi-Select</option>
+                          <option value="radio">Radio Buttons</option>
+                          <option value="checkbox">Checkbox</option>
+                          <option value="toggle">Toggle Switch</option>
+                          <option value="slider">Slider</option>
+                          <option value="file">File Upload</option>
+                          <option value="color">Color Picker</option>
+                          <option value="url">URL Input</option>
+                          <option value="search">Search Input</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="field-body">
+                    <div class="form-grid">
+                      <div class="form-group">
+                        <label class="form-label">Data Type</label>
+                        <select class="form-control" [(ngModel)]="field.dataType">
+                          <option value="string">String/Text</option>
+                          <option value="number">Number</option>
+                          <option value="integer">Integer</option>
+                          <option value="decimal">Decimal</option>
+                          <option value="boolean">Boolean</option>
+                          <option value="date">Date</option>
+                          <option value="datetime">Date & Time</option>
+                          <option value="email">Email</option>
+                          <option value="url">URL</option>
+                          <option value="json">JSON Object</option>
+                          <option value="array">Array</option>
+                          <option value="file">File</option>
+                        </select>
+                      </div>
+                      
+                      <div class="form-group">
+                        <label class="form-label">Max Length</label>
+                        <input 
+                          type="number" 
+                          class="form-control"
+                          [(ngModel)]="field.maxLength"
+                          placeholder="Maximum character length">
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label">Required Field</label>
+                        <select class="form-control" [(ngModel)]="field.required">
+                          <option [value]="true">Yes - Required</option>
+                          <option [value]="false">No - Optional</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-grid">
+                      <div class="form-group">
+                        <label class="form-label">Placeholder Text</label>
+                        <input 
+                          type="text" 
+                          class="form-control"
+                          [(ngModel)]="field.placeholderText"
+                          placeholder="Placeholder text shown to users">
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label">Default Value</label>
+                        <input 
+                          type="text" 
+                          class="form-control"
+                          [(ngModel)]="field.defaultValue"
+                          placeholder="Default value if any">
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">Description</label>
+                      <textarea 
+                        class="form-control"
+                        [(ngModel)]="field.description"
+                        placeholder="Detailed description of this field and its purpose"
+                        rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">Validation Rules</label>
+                      <textarea 
+                        class="form-control"
+                        [(ngModel)]="field.validationRules"
+                        placeholder="e.g., Must be unique, Format: XXX-XXX-XXXX, Min value: 0, Max value: 100"
+                        rows="2"></textarea>
+                    </div>
+
+                    <!-- Options for select, radio, checkbox controls -->
+                    <div *ngIf="field.uiControl === 'select' || field.uiControl === 'multiselect' || field.uiControl === 'radio'" class="form-group">
+                      <label class="form-label">Options (one per line)</label>
+                      <textarea 
+                        class="form-control"
+                        [(ngModel)]="field.optionsText"
+                        (ngModelChange)="updateFieldOptions(field, $event)"
+                        placeholder="Option 1&#10;Option 2&#10;Option 3"
+                        rows="4"></textarea>
+                    </div>
+                  </div>
+                  
+                  <div class="field-actions">
+                    <button 
+                      class="btn btn-danger btn-sm"
+                      (click)="removeDataField(i)">
+                      Remove Field
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Empty state -->
+                <div *ngIf="dataFields().length === 0" class="empty-state">
+                  <div class="empty-icon">📋</div>
+                  <h4>No Data Fields Defined</h4>
+                  <p>Start by adding your first data field to define what information your system will collect and manage.</p>
+                  <button class="btn btn-primary" (click)="addDataField()">
+                    Add First Data Field
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Features Tab -->
           <div *ngIf="activeTab() === 'features'" class="tab-content">
             <div class="section">
@@ -304,7 +484,7 @@ interface SuccessCriteria {
                 <h3 class="section-title">Features & Requirements</h3>
                 <button class="btn btn-primary" (click)="addFeature()">
                   <span class="icon">+</span>
-                  Add Feature
+                  Add Requirement
                 </button>
               </div>
               
@@ -313,26 +493,34 @@ interface SuccessCriteria {
                   <div class="feature-header">
                     <div class="form-grid">
                       <div class="form-group">
-                        <label class="form-label">Feature Title</label>
+                        <label class="form-label">Requirement Title</label>
                         <input 
                           type="text" 
                           class="form-control"
                           [(ngModel)]="feature.title"
-                          placeholder="Feature title">
+                          placeholder="What is this requirement called?">
                       </div>
                       <div class="form-group">
-                        <label class="form-label">Priority</label>
+                        <label class="form-label">How Important Is This?</label>
                         <select class="form-control" [(ngModel)]="feature.priority">
-                          <option value="high">High</option>
-                          <option value="medium">Medium</option>
-                          <option value="low">Low</option>
+                          <option value="critical">Critical - Must Have</option>
+                          <option value="high">High Priority</option>
+                          <option value="medium">Medium Priority</option>
+                          <option value="low">Low Priority</option>
+                          <option value="nice-to-have">Nice to Have</option>
                         </select>
                       </div>
                       <div class="form-group">
-                        <label class="form-label">Type</label>
+                        <label class="form-label">What Kind of Requirement?</label>
                         <select class="form-control" [(ngModel)]="feature.type">
-                          <option value="functional">Functional</option>
-                          <option value="non-functional">Non-Functional</option>
+                          <option value="functional">Functional - What the system does</option>
+                          <option value="non-functional">Non-Functional - How the system performs</option>
+                          <option value="business">Business Rule</option>
+                          <option value="integration">Integration Requirement</option>
+                          <option value="security">Security Requirement</option>
+                          <option value="performance">Performance Requirement</option>
+                          <option value="usability">Usability Requirement</option>
+                          <option value="compliance">Compliance Requirement</option>
                         </select>
                       </div>
                     </div>
@@ -340,21 +528,118 @@ interface SuccessCriteria {
                   
                   <div class="feature-body">
                     <div class="form-group">
-                      <label class="form-label">Description</label>
+                      <label class="form-label">What Should It Do?</label>
                       <textarea 
                         class="form-control"
                         [(ngModel)]="feature.description"
-                        placeholder="Detailed feature description"
-                        rows="3"></textarea>
+                        placeholder="Describe in detail what this requirement should accomplish. Be specific about the expected behavior and functionality."
+                        rows="4"></textarea>
                     </div>
                     
                     <div class="form-group">
-                      <label class="form-label">User Story</label>
+                      <label class="form-label">Tell Us More About It</label>
+                      <textarea 
+                        class="form-control"
+                        [(ngModel)]="feature.detailedDescription"
+                        placeholder="Provide additional context, background information, use cases, or any other relevant details that help understand this requirement better."
+                        rows="4"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">User Story (Optional)</label>
                       <textarea 
                         class="form-control"
                         [(ngModel)]="feature.userStory"
-                        placeholder="As a [user type], I want [goal] so that [benefit]"
+                        placeholder="As a [type of user], I want [goal/desire] so that [benefit/value]"
                         rows="2"></textarea>
+                    </div>
+
+                    <div class="form-grid">
+                      <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" [(ngModel)]="feature.status">
+                          <option value="draft">Draft</option>
+                          <option value="review">Under Review</option>
+                          <option value="approved">Approved</option>
+                          <option value="in-progress">In Progress</option>
+                          <option value="testing">Testing</option>
+                          <option value="completed">Completed</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label">Estimated Effort</label>
+                        <select class="form-control" [(ngModel)]="feature.estimatedEffort">
+                          <option value="xs">XS - 1-2 hours</option>
+                          <option value="s">S - 1-2 days</option>
+                          <option value="m">M - 3-5 days</option>
+                          <option value="l">L - 1-2 weeks</option>
+                          <option value="xl">XL - 2-4 weeks</option>
+                          <option value="xxl">XXL - 1+ months</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Acceptance Criteria -->
+                    <div class="form-group">
+                      <label class="form-label">Acceptance Criteria</label>
+                      <div class="criteria-list">
+                        <div *ngFor="let criteria of feature.acceptanceCriteria; let j = index" class="criteria-item">
+                          <div class="criteria-input">
+                            <input 
+                              type="text" 
+                              class="form-control"
+                              [(ngModel)]="feature.acceptanceCriteria[j]"
+                              placeholder="Given [context], when [action], then [outcome]">
+                            <button 
+                              class="btn btn-danger btn-sm"
+                              (click)="removeAcceptanceCriteria(feature, j)">
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                        <button 
+                          class="btn btn-outline btn-sm"
+                          (click)="addAcceptanceCriteria(feature)">
+                          + Add Acceptance Criteria
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Business Rules -->
+                    <div class="form-group">
+                      <label class="form-label">Business Rules</label>
+                      <div class="rules-list">
+                        <div *ngFor="let rule of feature.businessRules; let k = index" class="rule-item">
+                          <div class="rule-input">
+                            <input 
+                              type="text" 
+                              class="form-control"
+                              [(ngModel)]="feature.businessRules[k]"
+                              placeholder="Business rule or constraint">
+                            <button 
+                              class="btn btn-danger btn-sm"
+                              (click)="removeBusinessRule(feature, k)">
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                        <button 
+                          class="btn btn-outline btn-sm"
+                          (click)="addBusinessRule(feature)">
+                          + Add Business Rule
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">Testing Notes</label>
+                      <textarea 
+                        class="form-control"
+                        [(ngModel)]="feature.testingNotes"
+                        placeholder="Special testing considerations, test data requirements, or testing approach for this requirement"
+                        rows="3"></textarea>
                     </div>
                   </div>
                   
@@ -362,9 +647,19 @@ interface SuccessCriteria {
                     <button 
                       class="btn btn-danger btn-sm"
                       (click)="removeFeature(i)">
-                      Remove
+                      Remove Requirement
                     </button>
                   </div>
+                </div>
+
+                <!-- Empty state -->
+                <div *ngIf="features().length === 0" class="empty-state">
+                  <div class="empty-icon">⚡</div>
+                  <h4>No Requirements Defined</h4>
+                  <p>Start building your project by adding functional and non-functional requirements.</p>
+                  <button class="btn btn-primary" (click)="addFeature()">
+                    Add First Requirement
+                  </button>
                 </div>
               </div>
             </div>
@@ -407,24 +702,98 @@ interface SuccessCriteria {
           <div *ngIf="activeTab() === 'download'" class="tab-content">
             <div class="section">
               <h3 class="section-title">Export Project Documentation</h3>
+              
+              <!-- Project Summary Stats -->
+              <div class="summary-stats">
+                <div class="stat-card">
+                  <div class="stat-number">{{ getTotalRequirements() }}</div>
+                  <div class="stat-label">Total Requirements</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-number">{{ getHighPriorityCount() }}</div>
+                  <div class="stat-label">High Priority</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-number">{{ getFunctionalCount() }}</div>
+                  <div class="stat-label">Functional</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-number">{{ getNonFunctionalCount() }}</div>
+                  <div class="stat-label">Non-Functional</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-number">{{ getCompletionPercentage() }}%</div>
+                  <div class="stat-label">Complete</div>
+                </div>
+              </div>
+
+              <!-- Export Options -->
               <div class="export-grid">
                 <div class="export-card">
+                  <div class="export-icon">📄</div>
                   <h4>JSON Export</h4>
-                  <p>Complete project data in structured format</p>
+                  <p>Complete project data in structured JSON format for developers and system integration</p>
                   <button 
                     class="btn btn-primary"
                     (click)="exportProject('json')">
                     Download JSON
                   </button>
                 </div>
+
                 <div class="export-card">
+                  <div class="export-icon">📋</div>
                   <h4>Text Report</h4>
-                  <p>Human-readable project specification</p>
+                  <p>Comprehensive human-readable project specification document with all details</p>
                   <button 
                     class="btn btn-secondary"
                     (click)="exportProject('txt')">
                     Download Report
                   </button>
+                </div>
+
+                <div class="export-card">
+                  <div class="export-icon">📕</div>
+                  <h4>PDF Document</h4>
+                  <p>Professional formatted document suitable for stakeholder reviews and presentations</p>
+                  <button 
+                    class="btn btn-primary"
+                    (click)="exportProject('pdf')">
+                    Generate PDF
+                  </button>
+                </div>
+
+                <div class="export-card">
+                  <div class="export-icon">📘</div>
+                  <h4>Word Document</h4>
+                  <p>Editable document format for collaborative review and further documentation</p>
+                  <button 
+                    class="btn btn-primary"
+                    (click)="exportProject('word')">
+                    Generate Word Doc
+                  </button>
+                </div>
+
+                <div class="export-card">
+                  <div class="export-icon">📦</div>
+                  <h4>Complete Package</h4>
+                  <p>All project data, requirements, and documentation in a single downloadable package</p>
+                  <button 
+                    class="btn btn-success"
+                    (click)="exportProject('package')">
+                    Download Package
+                  </button>
+                </div>
+              </div>
+
+              <!-- Export History -->
+              <div class="section">
+                <h4 class="section-subtitle">Export History</h4>
+                <div class="export-history">
+                  <div class="history-item">
+                    <span class="history-date">{{ getCurrentDate() }}</span>
+                    <span class="history-action">Last saved automatically</span>
+                    <span class="history-status">✓ Current</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -914,6 +1283,219 @@ interface SuccessCriteria {
         grid-column: span 1;
       }
     }
+
+    /* Data Fields & Features Specific Styles */
+    .data-fields-list,
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .data-field-card,
+    .feature-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .field-header,
+    .feature-header {
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .field-body,
+    .feature-body {
+      margin-bottom: 1rem;
+    }
+
+    .field-actions,
+    .feature-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .criteria-list,
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .criteria-item,
+    .rule-item {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .criteria-input,
+    .rule-input {
+      display: flex;
+      gap: 0.5rem;
+      flex: 1;
+    }
+
+    .criteria-input .form-control,
+    .rule-input .form-control {
+      flex: 1;
+    }
+
+    .criteria-input .btn,
+    .rule-input .btn {
+      padding: 0.5rem;
+      min-width: 2rem;
+      height: 2.5rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.5rem;
+      color: #64748b;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.25rem;
+      color: #374151;
+    }
+
+    .empty-state p {
+      margin: 0 0 1.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    /* Download Section Styles */
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .export-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .export-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .export-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .export-card h4 {
+      margin: 0 0 0.75rem 0;
+      font-size: 1.25rem;
+      color: #1e293b;
+    }
+
+    .export-card p {
+      margin: 0 0 1.5rem 0;
+      color: #64748b;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    .section-subtitle {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 1rem;
+    }
+
+    .export-history {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1rem;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-date {
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .history-action {
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+
+    .history-status {
+      color: #059669;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .btn-success {
+      background: #059669;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #047857;
+    }
   `]
 })
 export class ProjectDetailComponent implements OnInit {
@@ -954,6 +1536,16 @@ export class ProjectDetailComponent implements OnInit {
 
   whatWeNeed = signal<WhatWeNeed>({
     userExperienceGoals: 'Create an intuitive, fast, and accessible shopping experience that works seamlessly across all devices.',
+    whatsIncluded: 'User authentication system, product catalog management, shopping cart functionality, secure payment processing, order management, user profile management, product search and filtering, inventory tracking, basic reporting dashboard.',
+    whatsNotIncluded: 'Mobile application development, advanced analytics dashboard, third-party marketplace integrations, social media login, subscription management, multi-language support, advanced recommendation engine.',
+    keyAssumptionsAndDependencies: 'Users have basic internet literacy and access to modern web browsers. Payment gateway APIs (Stripe/PayPal) are available and reliable. Client will provide initial product data and maintain inventory information. Email service provider integration is available for notifications.',
+    dataStorageNeeds: 'User account information (name, email, preferences), product catalog data (descriptions, prices, images, inventory), order history, shopping cart contents, payment transaction records, user reviews and ratings, audit logs for security compliance.',
+    externalServicesIntegrations: 'Stripe Payment Gateway for secure payment processing, SendGrid for transactional email notifications, AWS S3 for image and file storage, Google Analytics for basic usage tracking, Address validation API for shipping addresses.',
+    businessGoals: 'Increase online sales by 40%, improve customer satisfaction scores, reduce cart abandonment rates, streamline order processing workflow, establish foundation for future digital expansion.',
+    successMetrics: 'Page load time under 3 seconds, 99.9% uptime, conversion rate increase of 25%, customer satisfaction rating above 4.5 stars, zero critical security vulnerabilities.',
+    timelineExpectations: '6 months development timeline with 3 major milestones: MVP (2 months), Beta testing (1 month), Full launch (3 months)',
+    budgetConstraints: 'Development budget of $150,000, monthly operational costs under $2,000, ROI target of 300% within first year',
+    technicalConstraints: 'Must be responsive and work on IE11+, comply with WCAG 2.1 accessibility standards, support 1000+ concurrent users, integrate with existing WordPress website, use client-approved tech stack (React, Node.js, PostgreSQL)',
     scopeIncluded: ['User authentication', 'Product catalog', 'Shopping cart', 'Payment processing', 'Order management'],
     scopeExcluded: ['Mobile app development', 'Third-party marketplace integration', 'Advanced analytics dashboard'],
     keyAssumptions: ['Users have basic internet literacy', 'Payment gateway APIs are available', 'Product data is provided by client'],
@@ -965,29 +1557,33 @@ export class ProjectDetailComponent implements OnInit {
   dataFields = signal<DataField[]>([
     {
       id: '1',
-      fieldName: 'firstName',
+      name: 'firstName',
       displayLabel: 'First Name',
-      uiControl: 'input',
+      uiControl: 'text',
       dataType: 'string',
-      placeholder: 'Enter your first name',
+      placeholderText: 'Enter your first name',
       defaultValue: '',
       maxLength: 50,
       required: true,
-      validationRules: ['Required', 'Min 2 characters', 'Letters only'],
-      specifications: 'User\'s legal first name for account creation'
+      validationRules: 'Required, Min 2 characters, Letters only',
+      description: 'User\'s legal first name for account creation',
+      options: [],
+      optionsText: ''
     },
     {
       id: '2',
-      fieldName: 'email',
+      name: 'email',
       displayLabel: 'Email Address',
       uiControl: 'email',
       dataType: 'email',
-      placeholder: 'Enter your email address',
+      placeholderText: 'Enter your email address',
       defaultValue: '',
       maxLength: 100,
       required: true,
-      validationRules: ['Required', 'Valid email format', 'Unique in system'],
-      specifications: 'Primary contact email for user account and notifications'
+      validationRules: 'Required, Valid email format, Unique in system',
+      description: 'Primary contact email for user account and notifications',
+      options: [],
+      optionsText: ''
     }
   ]);
 
@@ -996,8 +1592,9 @@ export class ProjectDetailComponent implements OnInit {
       id: '1',
       title: 'User Authentication System',
       type: 'functional',
-      priority: 'high',
+      priority: 'critical',
       description: 'Secure user registration, login, and profile management',
+      detailedDescription: 'A comprehensive authentication system that handles user registration, login, password management, and profile updates. Must integrate with existing security standards and provide secure session management.',
       userStory: 'As a customer, I want to create an account and log in securely so that I can track my orders and save my preferences.',
       acceptanceCriteria: [
         'User can register with email and password',
@@ -1010,8 +1607,9 @@ export class ProjectDetailComponent implements OnInit {
         'Email addresses must be unique',
         'Users must verify email before full access'
       ],
-      testingNotes: 'Test with various email formats and password combinations',
-      status: 'draft'
+      testingNotes: 'Test with various email formats and password combinations. Verify security against common attacks.',
+      status: 'approved',
+      estimatedEffort: 'l'
     },
     {
       id: '2', 
@@ -1019,6 +1617,7 @@ export class ProjectDetailComponent implements OnInit {
       type: 'functional',
       priority: 'high',
       description: 'Advanced search functionality with filters and sorting options',
+      detailedDescription: 'Implement a robust search engine with intelligent filtering, faceted search, autocomplete suggestions, and advanced sorting capabilities. Should handle large product catalogs efficiently.',
       userStory: 'As a customer, I want to search for products and filter results so that I can quickly find what I am looking for.',
       acceptanceCriteria: [
         'Search returns relevant results',
@@ -1031,8 +1630,9 @@ export class ProjectDetailComponent implements OnInit {
         'Out-of-stock items shown but marked',
         'Search history saved for logged-in users'
       ],
-      testingNotes: 'Test search performance with large product catalogs',
-      status: 'draft'
+      testingNotes: 'Test search performance with large product catalogs. Verify relevance ranking algorithm.',
+      status: 'in-progress',
+      estimatedEffort: 'xl'
     }
   ]);
 
@@ -1071,11 +1671,13 @@ export class ProjectDetailComponent implements OnInit {
       type: 'functional',
       priority: 'medium',
       description: '',
+      detailedDescription: '',
       userStory: '',
-      acceptanceCriteria: [],
-      businessRules: [],
+      acceptanceCriteria: [''],
+      businessRules: [''],
       testingNotes: '',
-      status: 'draft'
+      status: 'draft',
+      estimatedEffort: 'm'
     };
     this.features.set([...currentFeatures, newFeature]);
   }
@@ -1097,18 +1699,41 @@ export class ProjectDetailComponent implements OnInit {
     const currentFields = this.dataFields();
     const newField: DataField = {
       id: Date.now().toString(),
-      fieldName: '',
+      name: '',
       displayLabel: '',
-      uiControl: 'input',
+      uiControl: 'text',
       dataType: 'string',
-      placeholder: '',
+      placeholderText: '',
       defaultValue: '',
       maxLength: 255,
       required: false,
-      validationRules: [],
-      specifications: ''
+      validationRules: '',
+      description: '',
+      options: [],
+      optionsText: ''
     };
     this.dataFields.set([...currentFields, newField]);
+  }
+
+  updateFieldOptions(field: DataField, optionsText: string) {
+    field.optionsText = optionsText;
+    field.options = optionsText.split('\n').filter(option => option.trim().length > 0).map(option => option.trim());
+  }
+
+  addAcceptanceCriteria(feature: Feature) {
+    feature.acceptanceCriteria.push('');
+  }
+
+  removeAcceptanceCriteria(feature: Feature, index: number) {
+    feature.acceptanceCriteria.splice(index, 1);
+  }
+
+  addBusinessRule(feature: Feature) {
+    feature.businessRules.push('');
+  }
+
+  removeBusinessRule(feature: Feature, index: number) {
+    feature.businessRules.splice(index, 1);
   }
 
   removeFeature(index: number) {
@@ -1130,7 +1755,7 @@ export class ProjectDetailComponent implements OnInit {
   }
 
   getHighPriorityCount(): number {
-    return this.features().filter(f => f.priority === 'high').length;
+    return this.features().filter(f => f.priority === 'critical' || f.priority === 'high').length;
   }
 
   getFunctionalCount(): number {
@@ -1144,12 +1769,16 @@ export class ProjectDetailComponent implements OnInit {
   getCompletionPercentage(): number {
     const features = this.features();
     if (features.length === 0) return 0;
-    const completed = features.filter(f => f.status === 'implemented' || f.status === 'approved').length;
+    const completed = features.filter(f => f.status === 'completed' || f.status === 'approved').length;
     return Math.round((completed / features.length) * 100);
   }
 
   getTotalRequirements(): number {
     return this.features().length + this.dataFields().length;
+  }
+
+  getCurrentDate(): string {
+    return new Date().toLocaleDateString();
   }
 
   autoSave() {
