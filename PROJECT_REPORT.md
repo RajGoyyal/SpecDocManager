@@ -34,13 +34,14 @@ To provide a centralized platform for software teams to efficiently create, mana
 ### Technology Stack
 
 #### Frontend (Angular 18.2.0)
-- **Framework**: Angular with TypeScript
-- **UI Components**: Custom component library with accessibility features
+- **Framework**: Angular with TypeScript and standalone components
+- **UI Architecture**: Component-based design with reusable sub-components
 - **State Management**: Angular Signals for reactive state management
 - **HTTP Client**: Angular HttpClient with interceptors
 - **Routing**: Angular Router with lazy loading
-- **Styling**: CSS with modern design tokens
+- **Styling**: Component-scoped CSS with design tokens
 - **Build Tool**: Angular CLI with optimized production builds
+- **SSR Support**: Angular Universal for server-side rendering
 
 #### Backend (Node.js/Express.js)
 - **Runtime**: Node.js with TypeScript
@@ -64,8 +65,8 @@ To provide a centralized platform for software teams to efficiently create, mana
 ### Code Statistics
 - **Total Project Code**: ~11,144 lines (excluding dependencies)
 - **Frontend Components**: 7 major page components
-- **Backend Services**: 7 specialized services
-- **API Endpoints**: 30+ RESTful endpoints
+- **Backend Services**: 4 core backend modules (index.ts, routes.ts, storage.ts, vite.ts)
+- **API Endpoints**: 20 RESTful endpoints
 - **Database Tables**: 8 core entities with relationships
 
 ---
@@ -177,10 +178,10 @@ To provide a centralized platform for software teams to efficiently create, mana
 - ✅ Project template system
 
 ### 📊 Current Metrics
-- **API Endpoints**: 30+ implemented and tested
+- **API Endpoints**: 20 implemented and tested
 - **Database Tables**: 8 core entities with proper relationships
-- **Frontend Components**: 7 major components with reusable sub-components
-- **Services**: 7 specialized frontend services
+- **Frontend Components**: 7 major page components with reusable sub-components
+- **Backend Modules**: 4 specialized backend modules
 - **Code Coverage**: Well-structured TypeScript with type safety
 - **Performance**: Optimized build process with lazy loading
 
@@ -338,21 +339,61 @@ To provide a centralized platform for software teams to efficiently create, mana
 
 ---
 
-## 8. Development Metrics and Quality Assurance
+## 9. User Interface and Screenshots
 
-### 8.1 Code Quality Metrics
+### 9.1 Main Dashboard
+![Main Dashboard](docs/images/main_dashboard.png)
+
+The main dashboard provides:
+- **Project Overview**: Grid view of all projects with status indicators
+- **Search and Filtering**: Real-time search and status-based filtering 
+- **Quick Stats**: Project count and progress statistics
+- **Project Creation**: One-click project creation with templates
+- **View Modes**: Switch between grid and list views
+
+### 9.2 Project Detail Interface
+![Project Detail - Basic Info](docs/images/project_detail_basic_info.png)
+
+The project detail interface features:
+- **Navigation Sidebar**: Quick access to all project sections
+- **Form-based Interface**: Structured data entry with validation
+- **Progress Tracking**: Visual progress indicators
+- **Auto-save**: Automatic saving of user input
+- **Responsive Design**: Works on desktop, tablet, and mobile
+
+### 9.3 Requirements Management
+![Requirements Management](docs/images/project_what_we_need.png)
+
+The requirements management section includes:
+- **Structured Categories**: Organized requirement gathering
+- **Rich Text Support**: Comprehensive text editing capabilities
+- **Form Validation**: Real-time input validation
+- **Guided Templates**: Pre-filled examples and guidance
+- **Comprehensive Coverage**: Business goals, technical requirements, compliance
+
+---
+
+## 10. Development Metrics and Quality Assurance
+
+### 10.1 Code Quality Metrics
 - **TypeScript Coverage**: 100% TypeScript implementation
 - **Type Safety**: Comprehensive type definitions across the stack
 - **Code Organization**: Modular architecture with clear separation of concerns
 - **Documentation**: Inline documentation and comprehensive API documentation
 
-### 8.2 Performance Metrics
-- **Build Time**: Optimized build process with ESBuild
-- **Bundle Size**: Optimized production bundles with tree shaking
-- **Runtime Performance**: Efficient Angular change detection and DOM updates
-- **Database Performance**: Optimized queries with proper indexing
+### 10.2 Performance Metrics (Verified)
+- **Angular Build Time**: ~12 seconds for production build
+- **Server Bundle Size**: 27.3kB (compiled Express server)
+- **Client Bundle Sizes**: 
+  - Main bundle: 402.60 kB raw / 95.83 kB transferred
+  - Polyfills: 34.52 kB raw / 11.28 kB transferred
+  - Styles: 14.10 kB raw / 2.89 kB transferred
+  - Total initial: 451.21 kB raw / 110.01 kB transferred
+- **Server Startup Time**: < 1 second
+- **Development Mode**: Angular dev server on port 4200, API proxy to port 5000
+- **Production Mode**: Unified server on port 5000 serving both API and static files
 
-### 8.3 User Experience Metrics
+### 10.3 User Experience Metrics
 - **Accessibility**: WCAG 2.1 AA compliance
 - **Responsive Design**: Support for mobile, tablet, and desktop devices
 - **Loading Times**: Fast initial load and navigation
@@ -360,31 +401,83 @@ To provide a centralized platform for software teams to efficiently create, mana
 
 ---
 
-## 9. Deployment and Infrastructure
+## 11. Deployment and Infrastructure
 
-### 9.1 Current Deployment Strategy
+### 11.1 Current Deployment Strategy
 - **Development Mode**: Separate Angular dev server (port 4200) with API proxy
 - **Production Mode**: Express server serving built Angular app (single port)
 - **Database**: PostgreSQL with Drizzle ORM migrations
 - **Environment Configuration**: Environment-based configuration management
 
-### 9.2 Infrastructure Requirements
+### 11.2 Infrastructure Requirements
 - **Node.js Runtime**: Version 18+ for optimal performance
 - **PostgreSQL Database**: Version 12+ with UUID extension
 - **Memory Requirements**: Minimum 512MB RAM for development
 - **Storage**: Minimal storage requirements for application code
 
-### 9.3 Deployment Recommendations
+### 11.3 Production Deployment Requirements
 - **Container Deployment**: Docker containerization for consistent deployment
 - **Cloud Deployment**: Support for major cloud providers (AWS, Azure, GCP)
 - **Load Balancing**: Horizontal scaling support with session persistence
 - **Monitoring**: Application performance monitoring and logging
 
+#### Critical Production Setup Step
+**IMPORTANT**: After building the Angular client, you must copy the index file:
+```bash
+cp client-angular/dist/client-angular/browser/index.csr.html client-angular/dist/client-angular/browser/index.html
+```
+This step is required for the production Express server to serve the Angular application correctly. Without this step, the production server will return 404 errors.
+
 ---
 
-## 10. Risk Assessment and Mitigation
+## 12. Known Issues and Limitations
 
-### 10.1 Technical Risks
+### 12.1 Current Known Issues
+
+#### Build Warnings
+- **CSS Budget Warning**: Angular build produces warnings for component styles exceeding the 15kB budget limit
+  - Warning: `angular:styles/component exceeded maximum budget. Budget 15.36 kB was not met by 2.26 kB with a total of 17.62 kB`
+  - Impact: Does not affect functionality but may require budget adjustment for production
+  - Workaround: Increase budget limits in `angular.json` or optimize component styles
+
+#### Production Deployment
+- **Index File Requirement**: Manual step required to copy `index.csr.html` to `index.html` after Angular build
+  - Without this step, production server returns 404 errors
+  - This should be automated in future build scripts
+
+#### Development Dependencies
+- **Legacy Peer Dependencies**: Root npm install requires `--legacy-peer-deps` flag due to version conflicts
+  - Impact: Slightly longer installation times
+  - Future: Resolve dependency conflicts in package.json
+
+### 12.2 Current Limitations
+
+#### Data Storage
+- **In-Memory Storage**: Currently uses in-memory storage for development/demo purposes
+- **Data Persistence**: Data is reset on server restart
+- **Migration Required**: Need to implement persistent database connection for production use
+
+#### Feature Limitations
+- **Single-User Mode**: No multi-user authentication or authorization system
+- **Real-time Collaboration**: No real-time collaborative editing features
+- **Advanced Export**: Limited document export formats (FRS generation available)
+- **File Uploads**: No file upload or attachment capabilities
+
+#### Scalability Considerations
+- **Session Storage**: Uses memory-based session storage (not suitable for multi-instance deployment)
+- **Database Connections**: No connection pooling or advanced database optimizations
+- **Caching**: No caching layer for improved performance
+
+### 12.3 Browser Compatibility
+- **Modern Browsers**: Tested and working on Chrome, Firefox, Safari, Edge
+- **Mobile Support**: Responsive design works on mobile devices
+- **JavaScript Requirements**: Requires JavaScript enabled (no graceful degradation)
+
+---
+
+## 13. Risk Assessment and Mitigation
+
+### 13.1 Technical Risks
 | Risk | Impact | Probability | Mitigation Strategy |
 |------|--------|-------------|-------------------|
 | Database Performance | Medium | Low | Query optimization and indexing |
@@ -392,7 +485,7 @@ To provide a centralized platform for software teams to efficiently create, mana
 | Scalability Limitations | High | Low | Microservices architecture planning |
 | Data Loss | High | Low | Automated backups and testing |
 
-### 10.2 Business Risks
+### 13.2 Business Risks
 | Risk | Impact | Probability | Mitigation Strategy |
 |------|--------|-------------|-------------------|
 | Competitor Features | Medium | Medium | Regular market analysis and feature planning |
@@ -402,7 +495,7 @@ To provide a centralized platform for software teams to efficiently create, mana
 
 ---
 
-## 11. Conclusion and Recommendations
+## 14. Conclusion and Recommendations
 
 SpecDocManager represents a comprehensive, modern solution for software specification document management. The project has successfully achieved its initial objectives and is well-positioned for future growth and enhancement.
 
