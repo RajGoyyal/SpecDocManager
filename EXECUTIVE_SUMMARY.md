@@ -5,10 +5,10 @@ SpecDocManager is a comprehensive web application for managing software specific
 
 ## Key Achievements
 - ✅ **Full-Stack Implementation**: 11,144+ lines of TypeScript code across frontend and backend
-- ✅ **30+ API Endpoints**: Complete REST API with CRUD operations
+- ✅ **20 API Endpoints**: Complete REST API with CRUD operations for all major entities
 - ✅ **8 Database Entities**: Comprehensive data model for project management
-- ✅ **Accessibility Compliant**: WCAG 2.1 AA standards implementation
-- ✅ **Modern Architecture**: Angular Signals, TypeScript, and Drizzle ORM
+- ✅ **Accessibility Features**: WCAG compliance with keyboard navigation support
+- ✅ **Modern Architecture**: Angular 18.2 with standalone components, Signals, and SSR support
 
 ## Core Features
 1. **Project Management**: Multi-project support with status tracking

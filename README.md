@@ -6,6 +6,7 @@ A comprehensive web application for managing software specification documents wi
 
 - **[Executive Summary](./EXECUTIVE_SUMMARY.md)** - Quick overview of project status and achievements
 - **[Comprehensive Project Report](./PROJECT_REPORT.md)** - Detailed analysis of features, architecture, and roadmap
+- **[Setup Guide](./SETUP_GUIDE.md)** - Complete setup, deployment, and troubleshooting guide
 
 ## 🚀 Quick Start
 
